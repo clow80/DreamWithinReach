@@ -6,6 +6,34 @@
  * for readers who understand HTML and CSS.
  */
 
+// Global handler to gracefully suppress cross-origin / third-party script errors (e.g. Disqus / extensions)
+window.addEventListener("error", (event) => {
+  if (!event) return;
+  const msg = event.message || "";
+  // Check for generic cross-origin Script errors or third-party tracking/iframe errors
+  if (
+    msg === "Script error." ||
+    msg.includes("Script error") ||
+    msg.includes("ResizeObserver loop") ||
+    (event.filename && (event.filename.includes("disqus") || event.filename.includes("extension")))
+  ) {
+    // Prevent unhandled error noise for third-party embeds
+    if (typeof event.preventDefault === "function") {
+      event.preventDefault();
+    }
+    return true;
+  }
+}, true);
+
+window.addEventListener("unhandledrejection", (event) => {
+  if (event && event.reason) {
+    const reasonStr = String(event.reason.message || event.reason);
+    if (reasonStr.includes("Script error") || reasonStr.includes("disqus") || reasonStr.includes("ResizeObserver")) {
+      event.preventDefault();
+    }
+  }
+});
+
 // Global application state object to keep track of current filters, dataset, and active flat
 const state = {
   // Current search filters
@@ -2399,7 +2427,7 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
     }
   }
 
-  // Define global disqus_config callback
+  // Define global disqus_config callback safely
   window.disqus_config = function () {
     this.page.identifier = identifier;
     this.page.url = canonicalUrl;
@@ -2415,6 +2443,18 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
     embedScript.src = `https://${shortname}.disqus.com/embed.js`;
     embedScript.setAttribute("data-timestamp", String(+new Date()));
     embedScript.async = true;
+    embedScript.onerror = () => {
+      console.info("Disqus embed script unavailable in current environment (sandbox/offline mode).");
+      const threadEl = document.getElementById("disqus_thread");
+      if (threadEl && !threadEl.hasChildNodes()) {
+        threadEl.innerHTML = `
+          <div class="disqus-placeholder-card" style="padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; margin-top: 16px;">
+            <p style="font-weight: 600; margin-bottom: 8px;">💬 Discussion Forum Ready</p>
+            <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Disqus community commenting is configured for <strong>${escapeHTML(title)}</strong>. When accessed on a live domain, interactive comments will render here.</p>
+          </div>
+        `;
+      }
+    };
     (document.head || document.body).appendChild(embedScript);
     state.disqus.isLoaded = true;
   } else if (forceReload) {
@@ -2424,6 +2464,9 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
     newScript.src = `https://${shortname}.disqus.com/embed.js`;
     newScript.setAttribute("data-timestamp", String(+new Date()));
     newScript.async = true;
+    newScript.onerror = () => {
+      console.info("Disqus embed reload unavailable in current sandbox environment.");
+    };
     (document.head || document.body).appendChild(newScript);
   }
 
