@@ -1,6 +1,6 @@
 {
   "name": "DreamWithinReach",
-  "description": "Interactive Singapore HDB property explorer with official Data.gov.sg API integration, Open-Meteo weather & solar forecast integration, Disqus community discussions, budget filtering, price trends, geocoded map, and sunlight ray exposure analysis.",
-  "requestFramePermissions": ["geolocation"],
+  "description": "Interactive Singapore HDB property explorer with solar ray exposure analysis, interactive map, price trend analytics, and budget affordability matrix.",
+  "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

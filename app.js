@@ -350,23 +350,9 @@ function initApp() {
   setupFilterEventListeners();
   setupTabNavigation();
   setupModalEventListeners();
-  setupGeminiChatEventListeners();
   setupMapEventListeners();
-  setupDisqusEventListeners();
-  setupCommunityCommentsEventListeners();
-  setupDatagovApiEventListeners();
-  setupWeatherEventListeners();
 
-  // 2. Initialize Gemini Chat Welcome message
-  initGeminiChatWelcome();
-
-  // 3. Initialize Community Comments & Forum
-  initLocalComments();
-
-  // 4. Initialize Open-Meteo Weather Forecast (Defaults to Singapore / Auto-detects IP)
-  initOpenMeteoWeather();
-
-  // 5. Fetch and render matching flats
+  // 2. Fetch and render matching flats
   fetchSearchResults();
 }
 
@@ -588,29 +574,17 @@ function setupTabNavigation() {
   const tabMap = document.getElementById("tab-map");
   const tabCharts = document.getElementById("tab-charts");
   const tabBudget = document.getElementById("tab-budget-buy");
-  const tabChat = document.getElementById("tab-gemini-chat");
-  const tabDiscussions = document.getElementById("tab-discussions");
-  const tabDatagov = document.getElementById("tab-datagov");
-  const tabWeather = document.getElementById("tab-weather");
 
   const panelResults = document.getElementById("view-results-panel");
   const panelMap = document.getElementById("view-map-panel");
   const panelCharts = document.getElementById("view-charts-panel");
   const panelBudget = document.getElementById("view-budget-panel");
-  const panelChat = document.getElementById("view-chat-panel");
-  const panelDiscussions = document.getElementById("view-discussions-panel");
-  const panelDatagov = document.getElementById("view-datagov-panel");
-  const panelWeather = document.getElementById("view-weather-panel");
 
   const tabs = [
     { btn: tabResults, panel: panelResults, key: "results" },
     { btn: tabMap, panel: panelMap, key: "map" },
     { btn: tabCharts, panel: panelCharts, key: "charts" },
-    { btn: tabBudget, panel: panelBudget, key: "budget-buy" },
-    { btn: tabChat, panel: panelChat, key: "gemini-chat" },
-    { btn: tabDiscussions, panel: panelDiscussions, key: "discussions" },
-    { btn: tabDatagov, panel: panelDatagov, key: "datagov" },
-    { btn: tabWeather, panel: panelWeather, key: "weather" }
+    { btn: tabBudget, panel: panelBudget, key: "budget-buy" }
   ];
 
   tabs.forEach(tabObj => {
@@ -636,34 +610,13 @@ function setupTabNavigation() {
       state.activeTab = tabObj.key;
 
       // When switching to specific views, trigger view-specific lifecycle hooks
-      if (tabObj.key === "results") {
-        renderMainPageReviewsPreview();
-      } else if (tabObj.key === "map") {
+      if (tabObj.key === "map") {
         renderMapMarkers();
       } else if (tabObj.key === "charts") {
         renderPriceTrendsChart();
         renderTownDistributionChart();
       } else if (tabObj.key === "budget-buy") {
         renderBudgetBuyMatrix();
-      } else if (tabObj.key === "gemini-chat") {
-        renderChatContextBadges();
-        scrollChatToBottom();
-      } else if (tabObj.key === "discussions") {
-        ensureDisqusContainer("discussions-tab-disqus-wrapper");
-        loadDisqusThread(
-          state.disqus.activeTopic,
-          state.disqus.activeTitle,
-          state.disqus.activeUrl || `${window.location.origin}/?topic=${encodeURIComponent(state.disqus.activeTopic)}`,
-          state.disqus.language
-        );
-      } else if (tabObj.key === "datagov") {
-        if (!state.datagov.lastResponse) {
-          executeDatagovPreset("first5");
-        }
-      } else if (tabObj.key === "weather") {
-        if (!state.weather.data) {
-          fetchOpenMeteoForecast(state.weather.lat, state.weather.lon, state.weather.locationName);
-        }
       }
     });
   });
@@ -1044,14 +997,8 @@ function renderFlatsList() {
           </div>
         </div>
         <div class="card-action-btns">
-          <button type="button" class="btn-discuss-card" data-flat-id="${flat.id}" title="Discuss this unit on Disqus">
-            <span aria-hidden="true">&#128172;</span> Discuss
-          </button>
           <button type="button" class="btn-view-map-card" data-flat-id="${flat.id}" title="View unit location on Singapore map">
             <span aria-hidden="true">&#127759;</span> Map
-          </button>
-          <button type="button" class="btn-ask-gemini" data-flat-id="${flat.id}" title="Ask Gemini AI Advisor about this unit">
-            <span aria-hidden="true">&#10024;</span> Ask AI
           </button>
           <button type="button" class="btn-inspect-sun" data-flat-id="${flat.id}">
             <span aria-hidden="true">&#9728;</span> Inspect Rays
@@ -1060,30 +1007,12 @@ function renderFlatsList() {
       </div>
     `;
 
-    // Click handler for Discuss button
-    const discussBtn = card.querySelector(".btn-discuss-card");
-    if (discussBtn) {
-      discussBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openDisqusForFlat(flat.id);
-      });
-    }
-
     // Click handler for the inspect button
     const inspectBtn = card.querySelector(".btn-inspect-sun");
     if (inspectBtn) {
       inspectBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         openSunlightModal(flat);
-      });
-    }
-
-    // Click handler for Ask AI button
-    const askAiBtn = card.querySelector(".btn-ask-gemini");
-    if (askAiBtn) {
-      askAiBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        askGeminiAboutFlat(flat);
       });
     }
 
