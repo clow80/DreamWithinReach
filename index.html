@@ -254,34 +254,6 @@
     <!-- Main Content Area: Dashboard, Views, Results, and Insights -->
     <section class="dashboard-content" aria-label="HDB Flat Search Results and Analysis">
       
-      <!-- Key Decision Factor Banner: Sunlight Ray & Orientation -->
-      <section class="sunlight-banner-card" aria-labelledby="sunlight-banner-title">
-        <div class="sunlight-banner-content">
-          <div class="banner-badge">
-            <span class="sun-glow-dot" aria-hidden="true"></span>
-            Homebuyer Sunlight Analysis
-          </div>
-          <h2 id="sunlight-banner-title" class="banner-title">Solar Ray Exposure &amp; Facade Orientation</h2>
-          <p class="banner-desc">
-            In Singapore’s tropical climate, direct afternoon west sun causes high heat retention, while North-South orientations offer cross-ventilation breezes and East-facing units provide gentle morning natural daylight. Use our <strong>Interactive Sunlight Ray Visualizer</strong> on any listing below to test solar ray angles across the day.
-          </p>
-        </div>
-        <div class="sunlight-quick-metrics" id="sunlight-metrics-summary">
-          <div class="quick-metric-item">
-            <span class="metric-num" id="stat-ns-count">--</span>
-            <span class="metric-label">North-South Breezy Units</span>
-          </div>
-          <div class="quick-metric-item">
-            <span class="metric-num" id="stat-morning-count">--</span>
-            <span class="metric-label">Morning Sun Units</span>
-          </div>
-          <div class="quick-metric-item">
-            <span class="metric-num" id="stat-comfort-pct">--%</span>
-            <span class="metric-label">High Thermal Comfort</span>
-          </div>
-        </div>
-      </section>
-
       <!-- Navigation Tabs for Switching Between Views -->
       <nav class="view-tabs-nav" role="tablist" aria-label="Explorer View Modes">
         <button type="button" role="tab" id="tab-results" class="view-tab active" aria-selected="true" aria-controls="view-results-panel">
@@ -320,6 +292,13 @@
             <line x1="12" y1="4" x2="12" y2="6"></line>
           </svg>
           &ldquo;What Does My Budget Buy?&rdquo; Panel
+        </button>
+
+        <button type="button" role="tab" id="tab-ai-insights" class="view-tab view-tab-ai" aria-selected="false" aria-controls="view-ai-insights-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+          </svg>
+          AI Flat Summary &amp; Insights <span class="ai-live-badge">AI INSIGHTS</span>
         </button>
       </nav>
 
@@ -658,6 +637,12 @@
             </div>
 
             <div class="map-info-actions-cluster">
+              <button type="button" id="btn-ai-map-flat" class="btn-ai-summary-pill">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                </svg>
+                <span>AI Flat Summary</span>
+              </button>
               <button type="button" id="btn-inspect-map-flat" class="btn-inspect-sun-lg">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <circle cx="12" cy="12" r="5"></circle>
@@ -776,6 +761,97 @@
         </article>
       </div>
 
+      <!-- VIEW 5: AI Resale Flat Summary & Insights (Direct Automated Evaluation) -->
+      <div id="view-ai-insights-panel" role="tabpanel" aria-labelledby="tab-ai-insights" class="tab-panel hidden">
+        <article class="panel-card ai-insights-card" aria-labelledby="ai-panel-title">
+          
+          <!-- AI Summary Header with Active Selection Scope & Actions -->
+          <div class="ai-insights-header">
+            <div class="ai-header-main">
+              <div class="ai-status-pill">
+                <span class="ai-sparkle-dot" aria-hidden="true"></span>
+                <span>Automated Gemini Resale Valuation &amp; Solar Intelligence</span>
+              </div>
+              <h3 id="ai-panel-title" class="ai-panel-title">AI Resale Flat Summary &amp; Valuation Insights</h3>
+              <p class="ai-panel-subtitle" id="ai-panel-subtitle">
+                Automated, data-grounded evaluation comparing price benchmarks, CPF lease safety, solar orientation, and strategic buy/pass recommendations based on your current selection.
+              </p>
+            </div>
+
+            <div class="ai-header-actions">
+              <button type="button" id="btn-refresh-ai-insights" class="btn-refresh-ai" title="Re-generate AI insights for current selection">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+                <span>Refresh Insights</span>
+              </button>
+              <button type="button" id="btn-copy-ai-summary" class="btn-copy-ai" title="Copy AI Summary to clipboard">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Summary</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Selection Switcher & Quick Unit Buttons -->
+          <div class="ai-scope-selector-box">
+            <div class="ai-scope-label-row">
+              <span class="ai-scope-heading">Current Evaluation Target:</span>
+              <span id="ai-active-target-badge" class="ai-target-badge">All Matching Units in Filter</span>
+            </div>
+
+            <div class="ai-quick-unit-chips" id="ai-unit-chips-container">
+              <!-- Dynamically populated with 'All Matching Flats' + top matching unit chips -->
+            </div>
+          </div>
+
+          <!-- Quick Metrics Context Cards Bar -->
+          <div class="ai-context-metrics-grid" id="ai-context-metrics-grid">
+            <div class="ai-metric-box">
+              <span class="ai-m-lbl">Target / Scope</span>
+              <strong class="ai-m-val" id="ai-ctx-scope">Singapore Overview</strong>
+            </div>
+            <div class="ai-metric-box">
+              <span class="ai-m-lbl">Asking / Avg Price</span>
+              <strong class="ai-m-val highlight-orange" id="ai-ctx-price">$0</strong>
+            </div>
+            <div class="ai-metric-box">
+              <span class="ai-m-lbl">Rate / Efficiency</span>
+              <strong class="ai-m-val" id="ai-ctx-psqm">$0 / sqm</strong>
+            </div>
+            <div class="ai-metric-box">
+              <span class="ai-m-lbl">Remaining Lease</span>
+              <strong class="ai-m-val" id="ai-ctx-lease">0 yrs</strong>
+            </div>
+            <div class="ai-metric-box">
+              <span class="ai-m-lbl">Solar Orientation</span>
+              <strong class="ai-m-val highlight-green" id="ai-ctx-facing">North-South Cool</strong>
+            </div>
+          </div>
+
+          <!-- Loading State Indicator -->
+          <div id="ai-insights-loading" class="ai-loading-container hidden" aria-live="polite">
+            <div class="ai-pulse-spinner" aria-hidden="true"></div>
+            <div class="ai-loading-text-group">
+              <h4>Gemini AI is analyzing resale transaction trends &amp; solar ray data...</h4>
+              <p>Formulating price benchmarks, thermal comfort score, lease decay trajectory, and strategic recommendations.</p>
+            </div>
+          </div>
+
+          <!-- Rendered AI Resale Flat Summary Insights Body -->
+          <div id="ai-insights-output" class="ai-insights-output-body" aria-live="polite">
+            <!-- Populated dynamically by app.js -->
+          </div>
+
+          <div class="ai-footer-note">
+            <span>&#9432; Powered by Gemini AI &bull; Grounded in Singapore HDB Resale transactions &amp; Tropical Solar Azimuth calculations.</span>
+          </div>
+
+        </article>
+      </div>
+
     </section>
   </main>
 
@@ -883,6 +959,16 @@
             <p id="modal-buyer-tip">
               Excellent layout for living room relaxation and home office use. You will enjoy bright natural ambient daylight without needing heavy blackout curtains or high daytime air-con bills.
             </p>
+          </div>
+
+          <!-- Direct AI Resale Flat Summary Button in Modal -->
+          <div class="modal-ai-action-box">
+            <button type="button" id="btn-modal-view-ai" class="btn-primary w-full flex items-center justify-center gap-2">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+              </svg>
+              <span>View Full AI Resale Summary &amp; Valuation</span>
+            </button>
           </div>
         </div>
 

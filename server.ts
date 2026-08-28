@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import searchHandler from "./api/search.js";
 import chatHandler from "./api/chat.js";
+import insightsHandler from "./api/insights.js";
 import { handleResaleSearch, handleDatasetMetadata } from "./api/datagov.js";
 import { API_SPEC } from "./api/index.js";
 
@@ -55,6 +56,25 @@ app.post("/api/search", async (req, res) => {
     await searchHandler(req, res);
   } catch (err: any) {
     console.error("API error in /api/search:", err);
+    res.status(500).json({ error: "Internal server error", message: err.message });
+  }
+});
+
+// Gemini AI Resale Flat Summary & Valuation Insights route
+app.post("/api/insights", async (req, res) => {
+  try {
+    await insightsHandler(req, res);
+  } catch (err: any) {
+    console.error("API error in /api/insights:", err);
+    res.status(500).json({ error: "Internal server error", message: err.message });
+  }
+});
+
+app.get("/api/insights", async (req, res) => {
+  try {
+    await insightsHandler(req, res);
+  } catch (err: any) {
+    console.error("API error in /api/insights:", err);
     res.status(500).json({ error: "Internal server error", message: err.message });
   }
 });

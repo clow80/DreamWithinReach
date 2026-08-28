@@ -76,12 +76,15 @@ const state = {
   selectedFlat: null,
   // Current simulation time for the sunlight canvas (in hours, e.g. 8.5 = 8:30 AM)
   simulatedTimeHours: 8.5,
-  // Active navigation tab ("results", "map", "charts", "budget-buy", "gemini-chat")
+  // Active navigation tab ("results", "map", "charts", "budget-buy", "ai-insights")
   activeTab: "results",
-  // Gemini Chat Advisor conversation state
-  chat: {
-    messages: [],
-    isLoading: false
+  // Gemini AI Resale Flat Summary & Valuation Insights state
+  aiInsights: {
+    mode: "selection", // "selection" (all filtered units) or "unit" (specific flat spotlight)
+    targetFlat: null,
+    currentText: "",
+    isLoading: false,
+    lastPayloadKey: ""
   },
   // Disqus Community Discussion & Review state
   disqus: {
@@ -351,6 +354,7 @@ function initApp() {
   setupTabNavigation();
   setupModalEventListeners();
   setupMapEventListeners();
+  setupAiInsightsUI();
 
   // 2. Fetch and render matching flats
   fetchSearchResults();
@@ -574,17 +578,20 @@ function setupTabNavigation() {
   const tabMap = document.getElementById("tab-map");
   const tabCharts = document.getElementById("tab-charts");
   const tabBudget = document.getElementById("tab-budget-buy");
+  const tabAi = document.getElementById("tab-ai-insights");
 
   const panelResults = document.getElementById("view-results-panel");
   const panelMap = document.getElementById("view-map-panel");
   const panelCharts = document.getElementById("view-charts-panel");
   const panelBudget = document.getElementById("view-budget-panel");
+  const panelAi = document.getElementById("view-ai-insights-panel");
 
   const tabs = [
     { btn: tabResults, panel: panelResults, key: "results" },
     { btn: tabMap, panel: panelMap, key: "map" },
     { btn: tabCharts, panel: panelCharts, key: "charts" },
-    { btn: tabBudget, panel: panelBudget, key: "budget-buy" }
+    { btn: tabBudget, panel: panelBudget, key: "budget-buy" },
+    { btn: tabAi, panel: panelAi, key: "ai-insights" }
   ];
 
   tabs.forEach(tabObj => {
@@ -617,6 +624,11 @@ function setupTabNavigation() {
         renderTownDistributionChart();
       } else if (tabObj.key === "budget-buy") {
         renderBudgetBuyMatrix();
+      } else if (tabObj.key === "ai-insights") {
+        updateAiInsightsContextBadges();
+        if (!state.aiInsights.currentText && !state.aiInsights.isLoading) {
+          fetchAiInsights(state.aiInsights.mode || "selection", state.aiInsights.targetFlat);
+        }
       }
     });
   });
@@ -909,8 +921,8 @@ function renderResultsHeaderAndMetrics() {
     resultsCountTitle.textContent = `${total} Matching HDB Flats in ${townLabel}`;
   }
 
-  // Update AI Chat Context Badges
-  renderChatContextBadges();
+  // Update AI Insights Context Badges and Quick Selectors
+  updateAiInsightsContextBadges();
 }
 
 /**
@@ -1000,8 +1012,11 @@ function renderFlatsList() {
           <button type="button" class="btn-view-map-card" data-flat-id="${flat.id}" title="View unit location on Singapore map">
             <span aria-hidden="true">&#127759;</span> Map
           </button>
-          <button type="button" class="btn-inspect-sun" data-flat-id="${flat.id}">
+          <button type="button" class="btn-inspect-sun" data-flat-id="${flat.id}" title="Inspect solar angles and comfort score">
             <span aria-hidden="true">&#9728;</span> Inspect Rays
+          </button>
+          <button type="button" class="btn-ai-card-summary" data-flat-id="${flat.id}" title="Generate AI Resale Flat Summary & Valuation Report">
+            <span aria-hidden="true">✨</span> AI Summary
           </button>
         </div>
       </div>
@@ -1022,6 +1037,15 @@ function renderFlatsList() {
       viewMapBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         focusFlatOnMap(flat.id);
+      });
+    }
+
+    // Click handler for AI Summary button
+    const aiSummaryBtn = card.querySelector(".btn-ai-card-summary");
+    if (aiSummaryBtn) {
+      aiSummaryBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openAiInsightsForFlat(flat);
       });
     }
 
@@ -1062,7 +1086,7 @@ function setupMapEventListeners() {
   const zoomOutBtn = document.getElementById("btn-map-zoom-out");
   const resetZoomBtn = document.getElementById("btn-map-reset-zoom");
   const closeInfoBtn = document.getElementById("btn-close-map-info");
-  const askGeminiMapBtn = document.getElementById("btn-ask-gemini-map");
+  const aiMapBtn = document.getElementById("btn-ai-map-flat");
   const inspectMapFlatBtn = document.getElementById("btn-inspect-map-flat");
   const legendPills = document.querySelectorAll(".legend-pill[data-facing-filter]");
 
@@ -1153,11 +1177,11 @@ function setupMapEventListeners() {
     });
   }
 
-  // Inspector "Ask Gemini Advisor" button
-  if (askGeminiMapBtn) {
-    askGeminiMapBtn.addEventListener("click", () => {
+  // Inspector "AI Flat Summary" button
+  if (aiMapBtn) {
+    aiMapBtn.addEventListener("click", () => {
       if (state.map.selectedFlat) {
-        askGeminiAboutFlat(state.map.selectedFlat);
+        openAiInsightsForFlat(state.map.selectedFlat);
       }
     });
   }
@@ -1784,6 +1808,17 @@ function setupModalEventListeners() {
     });
   });
 
+  // Modal AI Flat Summary button
+  const modalAiBtn = document.getElementById("btn-modal-view-ai");
+  if (modalAiBtn) {
+    modalAiBtn.addEventListener("click", () => {
+      if (state.selectedFlat) {
+        if (modal) modal.close();
+        openAiInsightsForFlat(state.selectedFlat);
+      }
+    });
+  }
+
   // Modal Disqus Discussion button
   const modalDiscussBtn = document.getElementById("btn-modal-discuss-disqus");
   if (modalDiscussBtn) {
@@ -2038,32 +2073,92 @@ function escapeHTML(str) {
 }
 
 /* ==========================================================================
-   Gemini AI Property & Thermal Comfort Advisor (Front-End Logic)
+   Gemini AI Resale Flat Summary & Valuation Insights (Front-End Logic)
+   Directly generates structured market summaries based on user selection or filters.
    ========================================================================== */
 
 /**
- * Initializes the chat advisor with an introductory guidance greeting.
+ * Sets up all event listeners and controls for the AI Resale Flat Summary panel.
  */
-function initGeminiChatWelcome() {
-  state.chat.messages = [
-    {
-      role: "bot",
-      text: "👋 **Hello! I am your Gemini HDB & Solar Advisory Assistant.**\n\nI am connected to live Singapore resale market transactions and solar azimuth trajectory models. Ask me about:\n\n* 🎯 **Best Value Buys**: Pinpointing units with optimal price per sqm and healthy remaining leases.\n* ☀️ **Thermal Comfort & Sun Rays**: Identifying homes with zero afternoon sun (West heat) and breezy North-South cross-ventilation.\n* 📊 **Lease Decay Analysis**: Weighing mature estate spaciousness versus younger estate lease preservation.\n* 💰 **CPF Housing Grants**: Estimating grant eligibility (EHG, Family Grant, PHG) for your budget.\n\n*Click one of the suggested strategy chips above or type your question below!*"
-    }
-  ];
-  renderChatMessages();
+function setupAiInsightsUI() {
+  const refreshBtn = document.getElementById("btn-refresh-ai-insights");
+  const copyBtn = document.getElementById("btn-copy-ai-summary");
+  const scopeFilterBtn = document.getElementById("btn-ai-filter-scope");
+  const floatingAiBtn = document.getElementById("btn-floating-ai");
+
+  // Refresh AI Summary button
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      fetchAiInsights(state.aiInsights.mode, state.aiInsights.targetFlat, true);
+    });
+  }
+
+  // Copy AI Summary report to clipboard
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      const textToCopy = state.aiInsights.currentText;
+      if (!textToCopy) return;
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(textToCopy);
+        } else {
+          // Fallback for non-secure contexts
+          const textarea = document.createElement("textarea");
+          textarea.value = textToCopy;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        }
+
+        const origHtml = copyBtn.innerHTML;
+        copyBtn.innerHTML = `<span>&#10003;</span> Copied!`;
+        copyBtn.classList.add("btn-copied-success");
+        setTimeout(() => {
+          copyBtn.innerHTML = origHtml;
+          copyBtn.classList.remove("btn-copied-success");
+        }, 2000);
+      } catch (err) {
+        console.warn("Failed to copy summary to clipboard:", err);
+      }
+    });
+  }
+
+  // Switch to "All Filtered Units" scope
+  if (scopeFilterBtn) {
+    scopeFilterBtn.addEventListener("click", () => {
+      openAiInsightsForSelection();
+    });
+  }
+
+  // Floating AI Summary trigger button in bottom right corner
+  if (floatingAiBtn) {
+    floatingAiBtn.addEventListener("click", () => {
+      const tabAi = document.getElementById("tab-ai-insights");
+      if (tabAi) {
+        tabAi.click();
+        const panelAi = document.getElementById("view-ai-insights-panel");
+        if (panelAi) {
+          panelAi.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    });
+  }
 }
 
 /**
- * Updates the context summary tags displayed at the top of the Gemini Chat panel.
+ * Updates the context summary tags and quick-select unit chips at top of the AI Insights panel.
  */
-function renderChatContextBadges() {
-  const budgetTag = document.getElementById("tag-budget-ctx");
-  const townTag = document.getElementById("tag-town-ctx");
-  const typeTag = document.getElementById("tag-type-ctx");
-  const leaseTag = document.getElementById("tag-lease-ctx");
-  const sunTag = document.getElementById("tag-sun-ctx");
-  const matchesTag = document.getElementById("tag-matches-ctx");
+function updateAiInsightsContextBadges() {
+  const budgetTag = document.getElementById("tag-ai-budget-ctx");
+  const townTag = document.getElementById("tag-ai-town-ctx");
+  const typeTag = document.getElementById("tag-ai-type-ctx");
+  const leaseTag = document.getElementById("tag-ai-lease-ctx");
+  const sunTag = document.getElementById("tag-ai-sun-ctx");
+  const matchesTag = document.getElementById("tag-ai-matches-ctx");
 
   if (budgetTag) {
     budgetTag.textContent = `Budget: $${(state.filters.budgetMin / 1000).toFixed(0)}k - $${(state.filters.budgetMax / 1000).toFixed(0)}k`;
@@ -2090,283 +2185,375 @@ function renderChatContextBadges() {
     const count = state.data.flats ? state.data.flats.length : 0;
     matchesTag.textContent = `${count} Matches Grounded`;
   }
+
+  // Also refresh the unit quick-selector chips
+  renderAiUnitQuickSelectorChips();
 }
 
 /**
- * Sets up all event listeners for the Gemini Chat UI.
+ * Renders quick selection pill chips for matching units in the AI Insights toolbar.
  */
-function setupGeminiChatEventListeners() {
-  const chatForm = document.getElementById("chat-form");
-  const chatInput = document.getElementById("chat-user-input");
-  const clearBtn = document.getElementById("btn-clear-chat");
-  const syncBtn = document.getElementById("btn-sync-chat-criteria");
-  const floatingAiBtn = document.getElementById("btn-floating-ai");
-  const starterChips = document.querySelectorAll(".prompt-chip");
+function renderAiUnitQuickSelectorChips() {
+  const chipsContainer = document.getElementById("ai-unit-chips-container");
+  if (!chipsContainer) return;
 
-  // Form submission handler
-  if (chatForm) {
-    chatForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (!chatInput) return;
-      const text = chatInput.value.trim();
-      if (text && !state.chat.isLoading) {
-        chatInput.value = "";
-        sendChatMessage(text);
-      }
-    });
+  chipsContainer.innerHTML = "";
+
+  const flats = state.data.flats || [];
+  if (flats.length === 0) {
+    chipsContainer.innerHTML = `<span class="ai-no-chips">No units currently matching your filters. Adjust budget or estate filters.</span>`;
+    return;
   }
 
-  // Keyboard shortcut: Enter sends message, Shift+Enter adds newline
-  if (chatInput) {
-    chatInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        const text = chatInput.value.trim();
-        if (text && !state.chat.isLoading) {
-          chatInput.value = "";
-          sendChatMessage(text);
-        }
-      }
-    });
-  }
-
-  // Prompt starter chips click handlers
-  starterChips.forEach(chip => {
-    chip.addEventListener("click", () => {
-      const prompt = chip.getAttribute("data-prompt");
-      if (prompt && !state.chat.isLoading) {
-        sendChatMessage(prompt);
-      }
-    });
+  // 1. "All Matching Units Overview" chip
+  const allChip = document.createElement("button");
+  allChip.type = "button";
+  allChip.className = `ai-unit-chip ${state.aiInsights.mode === "selection" ? "active" : ""}`;
+  allChip.innerHTML = `<span>📊</span> All ${flats.length} Matching Units`;
+  allChip.addEventListener("click", () => {
+    openAiInsightsForSelection();
   });
+  chipsContainer.appendChild(allChip);
 
-  // Clear chat history
-  if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      initGeminiChatWelcome();
+  // 2. Individual Unit chips for the top 8 listings
+  const topUnits = flats.slice(0, 8);
+  topUnits.forEach(flat => {
+    const isSelected = state.aiInsights.mode === "unit" && state.aiInsights.targetFlat && state.aiInsights.targetFlat.id === flat.id;
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = `ai-unit-chip ${isSelected ? "active" : ""}`;
+    chip.innerHTML = `<span>🏢</span> Blk ${escapeHTML(flat.block)} ${escapeHTML(flat.town)} ($${(flat.resale_price / 1000).toFixed(0)}k)`;
+    chip.addEventListener("click", () => {
+      openAiInsightsForFlat(flat);
     });
-  }
-
-  // Sync criteria button
-  if (syncBtn) {
-    syncBtn.addEventListener("click", () => {
-      renderChatContextBadges();
-      const count = state.data.flats ? state.data.flats.length : 0;
-      const syncNotice = `🔄 *Filters synchronized with Gemini advisor: ${count} matching listings currently in scope.*`;
-      state.chat.messages.push({ role: "bot", text: syncNotice });
-      renderChatMessages();
-      scrollChatToBottom();
-    });
-  }
-
-  // Floating AI launcher button in bottom right corner
-  if (floatingAiBtn) {
-    floatingAiBtn.addEventListener("click", () => {
-      const tabChat = document.getElementById("tab-gemini-chat");
-      if (tabChat) {
-        tabChat.click();
-        const chatPanel = document.getElementById("view-chat-panel");
-        if (chatPanel) {
-          chatPanel.scrollIntoView({ behavior: "smooth" });
-        }
-        setTimeout(() => {
-          if (chatInput) chatInput.focus();
-        }, 300);
-      }
-    });
-  }
+    chipsContainer.appendChild(chip);
+  });
 }
 
 /**
- * Sends a chat message to the server-side Gemini endpoint /api/chat.
- * 
- * @param {string} userText - User's prompt query
- */
-async function sendChatMessage(userText) {
-  if (!userText || state.chat.isLoading) return;
-
-  // 1. Add user message to state and update UI
-  state.chat.messages.push({ role: "user", text: userText });
-  state.chat.isLoading = true;
-  renderChatMessages();
-  scrollChatToBottom();
-
-  // Disable send button while awaiting response
-  const sendBtn = document.getElementById("btn-send-chat");
-  if (sendBtn) sendBtn.disabled = true;
-
-  // Show typing indicator in UI
-  showTypingIndicator();
-
-  // 2. Prepare grounded payload with current filters and matching unit context
-  const criteriaPayload = {
-    budgetMin: state.filters.budgetMin,
-    budgetMax: state.filters.budgetMax,
-    sizeMin: state.filters.sizeMin,
-    town: state.filters.town,
-    flatType: state.filters.flatType,
-    sunlightPreference: state.filters.sunlightPreference,
-    leaseMin: state.filters.leaseMin,
-    sortBy: state.filters.sortBy
-  };
-
-  const matchingSummary = {
-    totalMatches: state.data.flats ? state.data.flats.length : 0,
-    averagePrice: state.data.meta ? state.data.meta.averagePrice : 0,
-    averagePsqm: state.data.meta ? state.data.meta.averagePsqm : 0,
-    averageRemainingLease: state.data.meta ? state.data.meta.averageRemainingLease : 0,
-    topUnits: (state.data.flats || []).slice(0, 8).map(f => ({
-      id: f.id,
-      town: f.town,
-      block: f.block,
-      street_name: f.street_name,
-      flat_type: f.flat_type,
-      resale_price: f.resale_price,
-      floor_area_sqm: f.floor_area_sqm,
-      price_per_sqm: f.price_per_sqm,
-      remaining_lease_years: f.remaining_lease_years,
-      facing: f.facing,
-      afternoon_sun: f.afternoon_sun,
-      sunlight_score: f.sunlight_score
-    }))
-  };
-
-  // Convert internal history to Gemini API format
-  const apiHistory = state.chat.messages.slice(0, -1).map(msg => ({
-    role: msg.role === "user" ? "user" : "model",
-    text: msg.text
-  }));
-
-  try {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: userText,
-        history: apiHistory,
-        criteria: criteriaPayload,
-        matchingSummary: matchingSummary
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Chat service returned HTTP status ${response.status}`);
-    }
-
-    const data = await response.json();
-    const replyText = data.reply || "I apologize, but I was unable to generate an evaluation for this query. Please try asking again.";
-
-    state.chat.messages.push({ role: "bot", text: replyText });
-  } catch (error) {
-    console.error("Gemini Chat request failed:", error);
-    state.chat.messages.push({
-      role: "bot",
-      text: "⚠️ **Connection Notice:** Unable to reach the Gemini advisory service at this moment. Please check your network or try asking your question again in a moment."
-    });
-  } finally {
-    state.chat.isLoading = false;
-    hideTypingIndicator();
-    renderChatMessages();
-    scrollChatToBottom();
-    if (sendBtn) sendBtn.disabled = false;
-  }
-}
-
-/**
- * Triggers a focused Gemini AI evaluation for a specific flat card.
+ * Triggers a focused AI Resale Flat Summary for a specific flat.
  * 
  * @param {Object} flat - The selected HDB flat object
  */
-function askGeminiAboutFlat(flat) {
-  const tabChat = document.getElementById("tab-gemini-chat");
-  if (tabChat) {
-    tabChat.click();
+function openAiInsightsForFlat(flat) {
+  if (!flat) return;
+  state.aiInsights.mode = "unit";
+  state.aiInsights.targetFlat = flat;
+
+  const tabAi = document.getElementById("tab-ai-insights");
+  if (tabAi) {
+    tabAi.click();
+    const panelAi = document.getElementById("view-ai-insights-panel");
+    if (panelAi) {
+      panelAi.scrollIntoView({ behavior: "smooth" });
+    }
   }
 
-  const promptText = `Can you provide a comprehensive valuation and solar comfort assessment for **Blk ${flat.block} ${flat.street_name}** in **${flat.town}** listed at **$${flat.resale_price.toLocaleString()}** (${flat.flat_type}, ${flat.floor_area_sqm} sqm, ${flat.remaining_lease_years} years remaining lease, facing ${flat.facing} with ${flat.afternoon_sun})? Is this a good buy under my current budget limit?`;
-
-  sendChatMessage(promptText);
+  updateAiInsightsContextBadges();
+  fetchAiInsights("unit", flat, true);
 }
 
 /**
- * Renders all chat messages into the `#chat-messages-stream` container.
+ * Triggers an AI Resale Market Summary for all currently filtered units.
  */
-function renderChatMessages() {
-  const container = document.getElementById("chat-messages-stream");
-  if (!container) return;
+function openAiInsightsForSelection() {
+  state.aiInsights.mode = "selection";
+  state.aiInsights.targetFlat = null;
 
-  container.innerHTML = "";
+  const tabAi = document.getElementById("tab-ai-insights");
+  if (tabAi) {
+    tabAi.click();
+    const panelAi = document.getElementById("view-ai-insights-panel");
+    if (panelAi) {
+      panelAi.scrollIntoView({ behavior: "smooth" });
+    }
+  }
 
-  state.chat.messages.forEach(msg => {
-    const msgEl = document.createElement("div");
-    msgEl.className = `chat-msg ${msg.role === "user" ? "user" : "bot"}`;
-
-    const avatar = document.createElement("div");
-    avatar.className = "msg-avatar";
-    avatar.setAttribute("aria-hidden", "true");
-    avatar.textContent = msg.role === "user" ? "YOU" : "AI";
-
-    const content = document.createElement("div");
-    content.className = "msg-content-glass";
-    content.innerHTML = parseMarkdown(msg.text);
-
-    msgEl.appendChild(avatar);
-    msgEl.appendChild(content);
-    container.appendChild(msgEl);
-  });
+  updateAiInsightsContextBadges();
+  fetchAiInsights("selection", null, true);
 }
 
 /**
- * Displays a glowing typing indicator while Gemini is formulating advice.
+ * Fetches AI Resale Flat Summary and Valuation Insights from /api/insights.
+ * 
+ * @param {string} mode - "unit" or "selection"
+ * @param {Object|null} flat - Selected flat or null
+ * @param {boolean} forceRefresh - Whether to bypass cached result
  */
-function showTypingIndicator() {
-  const container = document.getElementById("chat-messages-stream");
-  if (!container) return;
+async function fetchAiInsights(mode = "selection", flat = null, forceRefresh = false) {
+  if (state.aiInsights.isLoading) return;
 
-  // Remove any existing typing indicator
-  hideTypingIndicator();
+  const activeMode = mode || state.aiInsights.mode || "selection";
+  const targetFlat = flat || (activeMode === "unit" ? state.aiInsights.targetFlat : null);
 
-  const indicator = document.createElement("div");
-  indicator.id = "chat-typing-indicator";
-  indicator.className = "chat-msg bot";
-  indicator.innerHTML = `
-    <div class="msg-avatar" aria-hidden="true">AI</div>
-    <div class="typing-indicator-wrapper">
-      <span>Gemini is evaluating market transactions and solar angles</span>
-      <div class="typing-dots">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
+  // Compute a payload hash/key to avoid redundant requests
+  const payloadKey = `${activeMode}-${targetFlat ? targetFlat.id : "all"}-${state.filters.town}-${state.filters.flatType}-${state.filters.budgetMax}-${state.data.flats ? state.data.flats.length : 0}`;
+
+  if (!forceRefresh && state.aiInsights.lastPayloadKey === payloadKey && state.aiInsights.currentText) {
+    return;
+  }
+
+  state.aiInsights.isLoading = true;
+  state.aiInsights.mode = activeMode;
+  state.aiInsights.targetFlat = targetFlat;
+  state.aiInsights.lastPayloadKey = payloadKey;
+
+  // Update UI loading state
+  const loadingEl = document.getElementById("ai-insights-loading");
+  const contentEl = document.getElementById("ai-insights-content");
+  const badgeTarget = document.getElementById("ai-active-target-badge");
+  const refreshBtn = document.getElementById("btn-refresh-ai-insights");
+
+  if (loadingEl) loadingEl.classList.remove("hidden");
+  if (contentEl) contentEl.classList.add("hidden");
+  if (refreshBtn) refreshBtn.disabled = true;
+
+  if (badgeTarget) {
+    if (activeMode === "unit" && targetFlat) {
+      badgeTarget.innerHTML = `<span>🏢 Unit Spotlight:</span> <strong>Blk ${escapeHTML(targetFlat.block)} ${escapeHTML(targetFlat.street_name)}</strong> (${escapeHTML(targetFlat.town)} &bull; $${targetFlat.resale_price.toLocaleString()})`;
+    } else {
+      const count = state.data.flats ? state.data.flats.length : 0;
+      const townLabel = state.filters.town === "ALL" ? "All Singapore Estates" : state.filters.town;
+      badgeTarget.innerHTML = `<span>📊 Filtered Scope:</span> <strong>${count} Matches in ${escapeHTML(townLabel)}</strong> (Up to $${(state.filters.budgetMax / 1000).toFixed(0)}k)`;
+    }
+  }
+
+  // Render contextual quick metrics grid
+  renderAiContextMetricsGrid(targetFlat, state.filters);
+
+  // Prepare payload for /api/insights
+  const payload = {
+    mode: activeMode,
+    flat: targetFlat ? {
+      id: targetFlat.id,
+      town: targetFlat.town,
+      block: targetFlat.block,
+      street_name: targetFlat.street_name,
+      flat_type: targetFlat.flat_type,
+      storey_range: targetFlat.storey_range,
+      flat_model: targetFlat.flat_model,
+      floor_area_sqm: targetFlat.floor_area_sqm,
+      resale_price: targetFlat.resale_price,
+      price_per_sqm: targetFlat.price_per_sqm,
+      remaining_lease_years: targetFlat.remaining_lease_years,
+      remaining_lease_months: targetFlat.remaining_lease_months,
+      lease_commence_date: targetFlat.lease_commence_date,
+      facing: targetFlat.facing,
+      living_room_facing: targetFlat.living_room_facing,
+      azimuth_deg: targetFlat.azimuth_deg,
+      afternoon_sun: targetFlat.afternoon_sun,
+      morning_sun: targetFlat.morning_sun,
+      thermal_comfort: targetFlat.thermal_comfort,
+      sunlight_score: targetFlat.sunlight_score
+    } : null,
+    criteria: {
+      budgetMin: state.filters.budgetMin,
+      budgetMax: state.filters.budgetMax,
+      sizeMin: state.filters.sizeMin,
+      town: state.filters.town,
+      flatType: state.filters.flatType,
+      sunlightPreference: state.filters.sunlightPreference,
+      leaseMin: state.filters.leaseMin,
+      sortBy: state.filters.sortBy
+    },
+    matchingSummary: {
+      totalMatches: state.data.flats ? state.data.flats.length : 0,
+      averagePrice: state.data.meta ? state.data.meta.averagePrice : 0,
+      averagePsqm: state.data.meta ? state.data.meta.averagePsqm : 0,
+      averageRemainingLease: state.data.meta ? state.data.meta.averageRemainingLease : 0,
+      topUnits: (state.data.flats || []).slice(0, 10).map(f => ({
+        id: f.id,
+        town: f.town,
+        block: f.block,
+        street_name: f.street_name,
+        flat_type: f.flat_type,
+        resale_price: f.resale_price,
+        floor_area_sqm: f.floor_area_sqm,
+        price_per_sqm: f.price_per_sqm,
+        remaining_lease_years: f.remaining_lease_years,
+        facing: f.facing,
+        afternoon_sun: f.afternoon_sun,
+        sunlight_score: f.sunlight_score
+      }))
+    }
+  };
+
+  try {
+    const response = await fetch("/api/insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI Insights endpoint returned HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const insightText = data.insight || "Unable to generate resale flat summary at this time.";
+
+    state.aiInsights.currentText = insightText;
+    renderAiInsightsResult(insightText, data.source || "gemini");
+  } catch (error) {
+    console.error("AI Insights request failed:", error);
+    const fallbackText = generateClientSideFallbackInsight(activeMode, targetFlat, state.filters, state.data);
+    state.aiInsights.currentText = fallbackText;
+    renderAiInsightsResult(fallbackText, "local");
+  } finally {
+    state.aiInsights.isLoading = false;
+    if (loadingEl) loadingEl.classList.add("hidden");
+    if (contentEl) contentEl.classList.remove("hidden");
+    if (refreshBtn) refreshBtn.disabled = false;
+  }
+}
+
+/**
+ * Renders the top contextual metrics cards (Valuation, Space, Lease, Solar).
+ */
+function renderAiContextMetricsGrid(flat, filters) {
+  const gridEl = document.getElementById("ai-context-metrics-grid");
+  if (!gridEl) return;
+
+  if (flat) {
+    const leasePercent = Math.min(100, Math.round((flat.remaining_lease_years / 99) * 100));
+    const sqft = Math.round(flat.floor_area_sqm * 10.764);
+    const isPrimeSun = flat.facing === "North-South" || !flat.facing.includes("West");
+
+    gridEl.innerHTML = `
+      <div class="ai-metric-tile">
+        <span class="ai-metric-label">Resale Price</span>
+        <span class="ai-metric-value text-amber-400">$${flat.resale_price.toLocaleString()}</span>
+        <span class="ai-metric-sub">$${flat.price_per_sqm.toLocaleString()} / sqm</span>
       </div>
+      <div class="ai-metric-tile">
+        <span class="ai-metric-label">Floor Area</span>
+        <span class="ai-metric-value">${flat.floor_area_sqm} sqm</span>
+        <span class="ai-metric-sub">~${sqft} sqft (${escapeHTML(flat.flat_type)})</span>
+      </div>
+      <div class="ai-metric-tile">
+        <span class="ai-metric-label">Remaining Lease</span>
+        <span class="ai-metric-value text-emerald-400">${flat.remaining_lease_years} Yrs</span>
+        <span class="ai-metric-sub">${leasePercent}% of 99-yr lease intact</span>
+      </div>
+      <div class="ai-metric-tile">
+        <span class="ai-metric-label">Solar Comfort</span>
+        <span class="ai-metric-value ${isPrimeSun ? 'text-emerald-400' : 'text-rose-400'}">${flat.sunlight_score}/100</span>
+        <span class="ai-metric-sub">${escapeHTML(flat.facing)} (${escapeHTML(flat.afternoon_sun)})</span>
+      </div>
+    `;
+  } else {
+    const total = state.data.flats ? state.data.flats.length : 0;
+    const avgPrice = state.data.meta && state.data.meta.averagePrice ? `$${state.data.meta.averagePrice.toLocaleString()}` : "$0";
+    const avgPsqm = state.data.meta && state.data.meta.averagePsqm ? `$${state.data.meta.averagePsqm.toLocaleString()}` : "$0";
+    const avgLease = state.data.meta && state.data.meta.averageRemainingLease ? `${state.data.meta.averageRemainingLease} Yrs` : "-";
+
+    gridEl.innerHTML = `
+      <div class="ai-metric-tile">
+        <span class="ai-metric-label">Matching Units</span>
+        <span class="ai-metric-value text-cyan-400">${total}</span>
+        <span class="ai-metric-sub">${filters.town === "ALL" ? "Across all towns" : escapeHTML(filters.town)}</span>
+      </div>
+      <div class="ai-metric-tile">
+        <span class="ai-metric-label">Average Resale Price</span>
+        <span class="ai-metric-value text-amber-400">${avgPrice}</span>
+        <span class="ai-metric-sub">Within $${(filters.budgetMax / 1000).toFixed(0)}k budget ceiling</span>
+      </div>
+      <div class="ai-metric-tile">
+        <span class="ai-metric-label">Average Unit Rate</span>
+        <span class="ai-metric-value">${avgPsqm} / sqm</span>
+        <span class="ai-metric-sub">HDB market valuation baseline</span>
+      </div>
+      <div class="ai-metric-tile">
+        <span class="ai-metric-label">Average Lease Remaining</span>
+        <span class="ai-metric-value text-emerald-400">${avgLease}</span>
+        <span class="ai-metric-sub">Healthy asset longevity</span>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Renders formatted AI markdown insights into the report viewer.
+ */
+function renderAiInsightsResult(markdownText, source) {
+  const contentEl = document.getElementById("ai-insights-content");
+  if (!contentEl) return;
+
+  const parsedHtml = parseMarkdown(markdownText);
+  const badgeSource = source === "gemini" 
+    ? `<div class="ai-source-stamp"><span class="gemini-sparkle">✨</span> Powered by Gemini 2.5 Flash &bull; Singapore Resale Transactions Grounded</div>`
+    : `<div class="ai-source-stamp"><span class="gemini-sparkle">📊</span> Deterministic Singapore HDB & Solar Trajectory Engine</div>`;
+
+  contentEl.innerHTML = `
+    ${badgeSource}
+    <div class="ai-insight-body-text">
+      ${parsedHtml}
     </div>
   `;
-
-  container.appendChild(indicator);
-  scrollChatToBottom();
 }
 
 /**
- * Removes the typing indicator once the response is received.
+ * Instant client-side fallback insight generator if network is offline.
  */
-function hideTypingIndicator() {
-  const indicator = document.getElementById("chat-typing-indicator");
-  if (indicator) indicator.remove();
-}
+function generateClientSideFallbackInsight(mode, flat, criteria, data) {
+  if (mode === "unit" && flat) {
+    const isOptimalSun = flat.facing === "North-South" || !flat.facing.includes("West");
+    const leaseHealthy = flat.remaining_lease_years >= 65;
 
-/**
- * Smoothly scrolls the chat message stream to the bottom.
- */
-function scrollChatToBottom() {
-  const container = document.getElementById("chat-messages-stream");
-  if (container) {
-    container.scrollTop = container.scrollHeight;
+    return `### 🏢 Executive Resale Valuation: Blk ${flat.block} ${flat.street_name} (${flat.town})
+
+**Listed Resale Price:** $${flat.resale_price.toLocaleString()} ($${flat.price_per_sqm.toLocaleString()} / sqm)  
+**Configuration:** ${flat.flat_type} (${flat.floor_area_sqm} sqm) • Storey ${flat.storey_range} • ${flat.remaining_lease_years} years lease remaining.
+
+---
+
+### ☀️ 1. Solar Azimuth & Thermal Comfort Analysis
+* **Orientation:** ${flat.facing} Facade (${flat.azimuth_deg}° Azimuth angle) with ${flat.afternoon_sun}.
+* **Thermal Rating:** **${flat.sunlight_score}/100** (${flat.thermal_comfort}).
+* **Living Experience:** ${isOptimalSun ? "This home enjoys excellent cross-ventilation and avoids late afternoon west heat, resulting in significantly lower air-conditioning power draw." : "This unit receives direct afternoon sun. Solar window films and thermal roller blinds will effectively manage daytime indoor temperatures."}
+
+### 💰 2. Valuation Benchmark & Budget Suitability
+* **Budget Headroom:** Priced at $${flat.resale_price.toLocaleString()}, this unit sits comfortably within your $${criteria.budgetMax.toLocaleString()} maximum ceiling (leaving **$${Math.max(0, criteria.budgetMax - flat.resale_price).toLocaleString()}** surplus for renovation).
+* **Price / SQM Comparison:** At $${flat.price_per_sqm.toLocaleString()} / sqm, this unit offers strong floor space utility for ${flat.town}.
+
+### ⏳ 3. Lease Longevity & Financing Profile
+* **Lease Balance:** ${flat.remaining_lease_years} years remaining (${flat.lease_commence_date} commencement).
+* **CPF Financing:** ${leaseHealthy ? "Fully eligible for maximum CPF Ordinary Account usage and standard HDB housing loan up to age 95 requirement." : "Healthy lease tenure; factor in buyer age for standard 95-year coverage calculation."}
+
+> **Strategic Buyer Verdict:** A well-balanced option in **${flat.town}** with solid floor area (${flat.floor_area_sqm} sqm) and ${isOptimalSun ? "prime orientation avoiding afternoon heat." : "accessible entry pricing under budget."}`;
+  } else {
+    const flats = data.flats || [];
+    const total = flats.length;
+    const avgPrice = data.meta && data.meta.averagePrice ? `$${data.meta.averagePrice.toLocaleString()}` : "$0";
+    const avgPsqm = data.meta && data.meta.averagePsqm ? `$${data.meta.averagePsqm.toLocaleString()}` : "$0";
+    const townLabel = criteria.town === "ALL" ? "All Singapore Estates" : criteria.town;
+
+    return `### 📊 Resale Market Overview: ${townLabel}
+
+**Active Filter Criteria:** Budget up to $${criteria.budgetMax.toLocaleString()} • Size ${criteria.sizeMin}+ sqm • ${criteria.flatType === "ALL" ? "All Flat Types" : criteria.flatType} • Lease ${criteria.leaseMin}+ yrs.  
+**Total Matching Listings:** **${total} verified HDB units** found.
+
+---
+
+### 📈 1. Pricing & Floor Area Distribution
+* **Average Resale Price:** ${avgPrice} across matching units.
+* **Average Price Rate:** ${avgPsqm} per square metre.
+* **Price Spread:** Listings range from affordable starter homes to prime spacious family flats within your ceiling.
+
+### ☀️ 2. Solar Orientation & Cross-Breeze Insights
+* **Thermal Distribution:** North-South and East-facing units in this selection maintain cooler indoor living spaces and superior monsoon wind capture.
+* **West Sun Advisory:** Look out for North-South aligned corridors to minimize peak 3:00 PM – 5:30 PM heat buildup.
+
+### 🎯 3. Strategic Buyer Recommendation
+* For maximum long-term value, prioritize units with **70+ years remaining lease** and **North-South orientation** in high-amenity precincts.
+* Select any individual unit chip above or click **✨ AI Summary** on any flat card for unit-specific valuation breakdown.`;
   }
 }
 
 /**
- * Lightweight, safe markdown formatter for chat responses.
+ * Lightweight, safe markdown formatter for AI insights.
  * 
- * @param {string} text - Raw markdown string from Gemini
+ * @param {string} text - Raw markdown string
  * @returns {string} - Formatted HTML string
  */
 function parseMarkdown(text) {
@@ -2376,8 +2563,8 @@ function parseMarkdown(text) {
   let html = escapeHTML(text);
 
   // 2. Headings (### Heading)
-  html = html.replace(/^### (.*$)/gim, "<h4>$1</h4>");
-  html = html.replace(/^## (.*$)/gim, "<h4>$1</h4>");
+  html = html.replace(/^### (.*$)/gim, '<h4 class="ai-insight-heading">$1</h4>');
+  html = html.replace(/^## (.*$)/gim, '<h3 class="ai-insight-title">$1</h3>');
 
   // 3. Bold text (**bold**)
   html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
@@ -2391,7 +2578,10 @@ function parseMarkdown(text) {
   // 6. Blockquotes (> text) as advisor verdict boxes
   html = html.replace(/^&gt; (.*$)/gim, '<div class="advisor-verdict-box">$1</div>');
 
-  // 7. Unordered Lists (* or -)
+  // 7. Horizontal dividers
+  html = html.replace(/^---$/gim, '<hr class="ai-divider" />');
+
+  // 8. Unordered Lists (* or -)
   const lines = html.split("\n");
   let inList = false;
   const processedLines = [];
@@ -2400,7 +2590,7 @@ function parseMarkdown(text) {
     const line = lines[i].trim();
     if (line.startsWith("• ") || line.startsWith("- ") || line.startsWith("* ")) {
       if (!inList) {
-        processedLines.push("<ul>");
+        processedLines.push("<ul class='ai-insight-list'>");
         inList = true;
       }
       processedLines.push(`<li>${line.substring(2)}</li>`);
@@ -2410,7 +2600,7 @@ function parseMarkdown(text) {
         inList = false;
       }
       if (line.length > 0) {
-        if (!line.startsWith("<h4>") && !line.startsWith('<div class="advisor-verdict-box">')) {
+        if (!line.startsWith("<h4") && !line.startsWith("<h3") && !line.startsWith('<div class="advisor-verdict-box">') && !line.startsWith('<hr')) {
           processedLines.push(`<p>${line}</p>`);
         } else {
           processedLines.push(line);
