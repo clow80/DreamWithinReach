@@ -1,10 +1,11 @@
 /**
  * app.js - HDB Explorer & Sunlight Ray Analyzer
  * 
- * Vanilla JavaScript Front-End Controller.
+ * Front-End Controller.
  * Every function is documented with beginner-friendly explanations
  * for readers who understand HTML and CSS.
  */
+import HDB_DATASET from "./hdb-dataset.js";
 
 // Global handler to gracefully suppress cross-origin / third-party script errors (e.g. Disqus / extensions)
 window.addEventListener("error", (event) => {
@@ -158,6 +159,7 @@ if (document.readyState === "loading") {
  * Whenever a user moves a slider or picks a dropdown, we update state and refresh.
  */
 function setupFilterEventListeners() {
+  const filterForm = document.getElementById("filter-form");
   const budgetMaxSlider = document.getElementById("filter-budget-max");
   const budgetMinInput = document.getElementById("input-budget-min");
   const budgetMaxInput = document.getElementById("input-budget-max");
@@ -174,95 +176,136 @@ function setupFilterEventListeners() {
   const resetBtn = document.getElementById("btn-reset-filters");
   const clearEmptyBtn = document.getElementById("btn-clear-filters-empty");
 
-  // Helper debounce timer so we don't spam the server on every tiny slider tick
+  // Prevent form submission reloads
+  if (filterForm) {
+    filterForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      fetchSearchResults();
+    });
+  }
+
+  // Helper debounce timer for smooth continuous sliding
   let debounceTimer = null;
   const triggerDebouncedSearch = () => {
+    // 1. Immediately compute locally for instant 0ms UI reaction
+    const localData = computeLocalSearchResults(state.filters);
+    if (localData) {
+      state.data.flats = localData.results || [];
+      state.data.meta = localData.meta || {};
+      state.data.analytics = localData.analytics || {};
+      renderResultsHeaderAndMetrics();
+      renderFlatsList();
+      renderMapMarkers();
+      renderPriceTrendsChart();
+      renderTownDistributionChart();
+      renderBudgetBuyMatrix();
+    }
+
+    // 2. Debounce background API query
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       fetchSearchResults();
-    }, 200);
+    }, 150);
   };
 
   // When Budget Max slider is moved
   if (budgetMaxSlider) {
-    budgetMaxSlider.addEventListener("input", (e) => {
+    const handleBudgetSlider = (e) => {
       const val = parseInt(e.target.value, 10);
       state.filters.budgetMax = val;
       if (budgetMaxInput) budgetMaxInput.value = val;
       updateBudgetDisplayLabel();
       triggerDebouncedSearch();
-    });
+    };
+    budgetMaxSlider.addEventListener("input", handleBudgetSlider);
+    budgetMaxSlider.addEventListener("change", handleBudgetSlider);
   }
 
   // When Budget Number Inputs change
   if (budgetMinInput) {
-    budgetMinInput.addEventListener("change", (e) => {
+    const handleMinInput = (e) => {
       state.filters.budgetMin = Math.max(0, parseInt(e.target.value, 10) || 0);
       updateBudgetDisplayLabel();
-      fetchSearchResults();
-    });
+      triggerDebouncedSearch();
+    };
+    budgetMinInput.addEventListener("input", handleMinInput);
+    budgetMinInput.addEventListener("change", handleMinInput);
   }
 
   if (budgetMaxInput) {
-    budgetMaxInput.addEventListener("change", (e) => {
+    const handleMaxInput = (e) => {
       const val = Math.max(100000, parseInt(e.target.value, 10) || 1500000);
       state.filters.budgetMax = val;
       if (budgetMaxSlider) budgetMaxSlider.value = Math.min(1500000, val);
       updateBudgetDisplayLabel();
-      fetchSearchResults();
-    });
+      triggerDebouncedSearch();
+    };
+    budgetMaxInput.addEventListener("input", handleMaxInput);
+    budgetMaxInput.addEventListener("change", handleMaxInput);
   }
 
   // When Property Size (sqm) slider is moved
   if (sizeMinSlider) {
-    sizeMinSlider.addEventListener("input", (e) => {
+    const handleSizeSlider = (e) => {
       const val = parseInt(e.target.value, 10);
       state.filters.sizeMin = val;
       if (sizeValDisplay) {
         sizeValDisplay.textContent = val <= 50 ? "All Sizes (50 - 160 sqm)" : `Min ${val} sqm`;
       }
       triggerDebouncedSearch();
-    });
+    };
+    sizeMinSlider.addEventListener("input", handleSizeSlider);
+    sizeMinSlider.addEventListener("change", handleSizeSlider);
   }
 
   // When Town selection changes
   if (townSelect) {
-    townSelect.addEventListener("change", (e) => {
+    const handleTown = (e) => {
       state.filters.town = e.target.value;
-      fetchSearchResults();
-    });
+      triggerDebouncedSearch();
+    };
+    townSelect.addEventListener("change", handleTown);
+    townSelect.addEventListener("input", handleTown);
   }
 
   // When Flat Type selection changes
   if (flatTypeSelect) {
-    flatTypeSelect.addEventListener("change", (e) => {
+    const handleFlatType = (e) => {
       state.filters.flatType = e.target.value;
-      fetchSearchResults();
-    });
+      triggerDebouncedSearch();
+    };
+    flatTypeSelect.addEventListener("change", handleFlatType);
+    flatTypeSelect.addEventListener("input", handleFlatType);
   }
 
   // When Sunlight Ray criteria changes
   if (sunlightSelect) {
-    sunlightSelect.addEventListener("change", (e) => {
+    const handleSunlight = (e) => {
       state.filters.sunlightPreference = e.target.value;
-      fetchSearchResults();
-    });
+      triggerDebouncedSearch();
+    };
+    sunlightSelect.addEventListener("change", handleSunlight);
+    sunlightSelect.addEventListener("input", handleSunlight);
   }
 
   // When Remaining Lease changes
   if (leaseMinSelect) {
-    leaseMinSelect.addEventListener("change", (e) => {
+    const handleLease = (e) => {
       state.filters.leaseMin = parseInt(e.target.value, 10) || 0;
-      fetchSearchResults();
-    });
+      triggerDebouncedSearch();
+    };
+    leaseMinSelect.addEventListener("change", handleLease);
+    leaseMinSelect.addEventListener("input", handleLease);
   }
 
   // When Sort By changes
   if (sortBySelect) {
-    sortBySelect.addEventListener("change", (e) => {
+    const handleSort = (e) => {
       state.filters.sortBy = e.target.value;
-      fetchSearchResults();
-    });
+      triggerDebouncedSearch();
+    };
+    sortBySelect.addEventListener("change", handleSort);
+    sortBySelect.addEventListener("input", handleSort);
   }
 
   // Reset filter buttons

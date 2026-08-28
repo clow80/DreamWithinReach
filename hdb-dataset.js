@@ -1147,3 +1147,6 @@ if (typeof globalThis !== "undefined") {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = HDB_DATASET;
 }
+
+export { HDB_DATASET };
+export default HDB_DATASET;
