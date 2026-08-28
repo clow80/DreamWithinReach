@@ -2246,15 +2246,35 @@ function ensureDisqusContainer(targetWrapperId) {
 
 /**
  * Initializes the Main Page Disqus thread when the user first loads the app.
+ * Prepares the container UI safely without blocking initial app load.
  */
 function initMainPageDisqus() {
-  ensureDisqusContainer("main-page-disqus-wrapper");
-  loadDisqusThread(
-    state.disqus.mainPageTopic || "dreamwithinreach-main-page",
-    state.disqus.mainPageTitle || "🇸🇬 DreamWithinReach Main Community Discussion",
-    `${window.location.origin}/#${state.disqus.mainPageTopic || "dreamwithinreach-main-page"}`,
-    "en"
-  );
+  const wrapper = document.getElementById("main-page-disqus-wrapper");
+  if (!wrapper) return;
+  const thread = ensureDisqusContainer("main-page-disqus-wrapper");
+  if (thread && !thread.hasChildNodes()) {
+    thread.innerHTML = `
+      <div class="disqus-placeholder-card" style="padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; margin-top: 16px;">
+        <p style="font-weight: 600; font-size: 15px; margin-bottom: 8px;">💬 Community Discussion &amp; Home Buyer Forum</p>
+        <p style="font-size: 13px; color: #94a3b8; max-width: 540px; margin: 0 auto 16px;">Join the discussion on Singapore HDB resale pricing, afternoon sun exposure strategies, and town amenities.</p>
+        <button type="button" id="btn-activate-main-disqus" class="btn-discuss-disqus" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px;">
+          <span>🚀 Load Live Community Forum</span>
+        </button>
+      </div>
+    `;
+    const activateBtn = document.getElementById("btn-activate-main-disqus");
+    if (activateBtn) {
+      activateBtn.addEventListener("click", () => {
+        loadDisqusThread(
+          state.disqus.mainPageTopic || "dreamwithinreach-main-page",
+          state.disqus.mainPageTitle || "🇸🇬 DreamWithinReach Main Community Discussion",
+          `${window.location.origin}/#${state.disqus.mainPageTopic || "dreamwithinreach-main-page"}`,
+          "en",
+          true
+        );
+      });
+    }
+  }
 }
 
 /**
@@ -2435,39 +2455,45 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
     this.language = language;
   };
 
-  // Dynamically inject the Disqus embed script if not already present
-  let embedScript = document.getElementById("disqus-embed-script");
-  if (!embedScript) {
-    embedScript = document.createElement("script");
-    embedScript.id = "disqus-embed-script";
-    embedScript.src = `https://${shortname}.disqus.com/embed.js`;
-    embedScript.setAttribute("data-timestamp", String(+new Date()));
-    embedScript.async = true;
-    embedScript.onerror = () => {
-      console.info("Disqus embed script unavailable in current environment (sandbox/offline mode).");
-      const threadEl = document.getElementById("disqus_thread");
-      if (threadEl && !threadEl.hasChildNodes()) {
-        threadEl.innerHTML = `
-          <div class="disqus-placeholder-card" style="padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; margin-top: 16px;">
-            <p style="font-weight: 600; margin-bottom: 8px;">💬 Discussion Forum Ready</p>
-            <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Disqus community commenting is configured for <strong>${escapeHTML(title)}</strong>. When accessed on a live domain, interactive comments will render here.</p>
-          </div>
-        `;
-      }
-    };
-    (document.head || document.body).appendChild(embedScript);
-    state.disqus.isLoaded = true;
-  } else if (forceReload) {
-    embedScript.remove();
-    const newScript = document.createElement("script");
-    newScript.id = "disqus-embed-script";
-    newScript.src = `https://${shortname}.disqus.com/embed.js`;
-    newScript.setAttribute("data-timestamp", String(+new Date()));
-    newScript.async = true;
-    newScript.onerror = () => {
-      console.info("Disqus embed reload unavailable in current sandbox environment.");
-    };
-    (document.head || document.body).appendChild(newScript);
+  try {
+    // Dynamically inject the Disqus embed script safely
+    let embedScript = document.getElementById("disqus-embed-script");
+    if (!embedScript) {
+      embedScript = document.createElement("script");
+      embedScript.id = "disqus-embed-script";
+      embedScript.src = `https://${shortname}.disqus.com/embed.js`;
+      embedScript.setAttribute("data-timestamp", String(+new Date()));
+      embedScript.async = true;
+      embedScript.crossOrigin = "anonymous";
+      embedScript.onerror = () => {
+        console.info("Disqus embed script unavailable in current environment (sandbox/offline mode).");
+        const threadEl = document.getElementById("disqus_thread");
+        if (threadEl && !threadEl.hasChildNodes()) {
+          threadEl.innerHTML = `
+            <div class="disqus-placeholder-card" style="padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; margin-top: 16px;">
+              <p style="font-weight: 600; margin-bottom: 8px;">💬 Discussion Forum Ready</p>
+              <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Disqus community commenting is configured for <strong>${escapeHTML(title)}</strong>. When accessed on a live domain, interactive comments will render here.</p>
+            </div>
+          `;
+        }
+      };
+      (document.head || document.body).appendChild(embedScript);
+      state.disqus.isLoaded = true;
+    } else if (forceReload) {
+      embedScript.remove();
+      const newScript = document.createElement("script");
+      newScript.id = "disqus-embed-script";
+      newScript.src = `https://${shortname}.disqus.com/embed.js`;
+      newScript.setAttribute("data-timestamp", String(+new Date()));
+      newScript.async = true;
+      newScript.crossOrigin = "anonymous";
+      newScript.onerror = () => {
+        console.info("Disqus embed reload unavailable in current sandbox environment.");
+      };
+      (document.head || document.body).appendChild(newScript);
+    }
+  } catch (err) {
+    console.warn("Disqus script creation exception:", err);
   }
 
   refreshDisqusCounts();

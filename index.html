@@ -13,6 +13,49 @@
   
   <!-- Stylesheet -->
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Early Global Error Suppressor for Third-Party / Cross-Origin Scripts -->
+  <script>
+    (function() {
+      function shouldSuppress(msg, source) {
+        if (!msg) return true;
+        var sMsg = String(msg);
+        var sSrc = String(source || "");
+        return (
+          sMsg === "Script error." ||
+          sMsg.indexOf("Script error") !== -1 ||
+          sMsg.indexOf("ResizeObserver loop") !== -1 ||
+          sSrc.indexOf("disqus") !== -1 ||
+          sSrc.indexOf("extension") !== -1
+        );
+      }
+      window.onerror = function(message, source, lineno, colno, error) {
+        if (shouldSuppress(message, source)) {
+          return true; // suppresses the unhandled error from browser reporting
+        }
+      };
+      window.addEventListener("error", function(event) {
+        if (!event) return;
+        if (shouldSuppress(event.message, event.filename)) {
+          if (typeof event.preventDefault === "function") {
+            event.preventDefault();
+          }
+          if (typeof event.stopPropagation === "function") {
+            event.stopPropagation();
+          }
+          return true;
+        }
+      }, true);
+      window.addEventListener("unhandledrejection", function(event) {
+        if (event && event.reason) {
+          var reasonStr = String(event.reason.message || event.reason);
+          if (shouldSuppress(reasonStr, "")) {
+            event.preventDefault();
+          }
+        }
+      });
+    })();
+  </script>
 </head>
 <body>
   <!-- Ambient Frosted Glass Radiant Glow Backdrop -->
