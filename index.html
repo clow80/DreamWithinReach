@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DreamWithinReach - Singapore HDB Resale Explorer with Budget & Size filters, Market Price Trends, Geocoded Map, and Sunlight Ray Exposure Analysis.">
+  <title>DreamWithinReach &amp; Sunlight Ray Analyzer</title>
+  
+  <!-- Material Icons / Web Fonts for accessible crisp typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambient Frosted Glass Radiant Glow Backdrop -->
+  <div class="frosted-glow-backdrop" aria-hidden="true">
+    <div class="glow-orb glow-orb-top-left"></div>
+    <div class="glow-orb glow-orb-bottom-right"></div>
+    <div class="glow-orb glow-orb-center"></div>
+  </div>
+
+  <!-- Skip link for keyboard accessibility (WCAG 2.1 AA) -->
+  <a href="#main-content" class="skip-to-content" id="skip-link">Skip to main content</a>
+
+  <!-- Top Application Bar -->
+  <header class="top-app-bar" role="banner">
+    <div class="top-bar-container">
+      <div class="brand-group">
+        <div class="brand-icon" aria-label="DreamWithinReach House Icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Dream<span class="brand-accent">WithinReach</span></h1>
+          <p class="brand-subtitle">Singapore HDB Resale &amp; Solar Ray Analyzer</p>
+        </div>
+      </div>
+
+      <!-- Quick Summary Stats in Header -->
+      <div class="header-actions-group">
+        <button type="button" class="header-weather-badge" id="header-weather-btn" title="Click to open Open-Meteo live weather forecast and atmospheric analysis" aria-label="Open Weather & Solar Climate Panel">
+          <span class="weather-icon-live" id="header-weather-icon">🌤️</span>
+          <span id="header-weather-text">Open-Meteo: Loading...</span>
+        </button>
+
+        <div class="header-stats-badge" id="header-stats-badge" aria-live="polite">
+          <span class="pulse-indicator" aria-hidden="true"></span>
+          <span id="header-match-count">Searching database...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-layout" id="main-content" role="main">
+    
+    <!-- Left / Top Controls Sidebar: Input Filters -->
+    <aside class="filter-sidebar" aria-labelledby="filter-heading">
+      <div class="sidebar-header">
+        <h2 id="filter-heading" class="section-heading">Search &amp; Filter Flats</h2>
+        <button type="button" id="btn-reset-filters" class="btn-text" aria-label="Reset all search filters">Reset Filters</button>
+      </div>
+
+      <form id="filter-form" class="filter-form" novalidate>
+        
+        <!-- Filter: Budget (Price Range) -->
+        <fieldset class="filter-group">
+          <legend class="filter-label">
+            <span>Budget Range (SGD)</span>
+            <span class="filter-value-display" id="budget-val-display">$300k - $1.5M</span>
+          </legend>
+          
+          <div class="range-slider-wrapper">
+            <label for="filter-budget-max" class="visually-hidden">Maximum Budget</label>
+            <input type="range" id="filter-budget-max" name="budgetMax" min="300000" max="1500000" step="25000" value="1500000" class="custom-range" aria-valuemin="300000" aria-valuemax="1500000" aria-valuenow="1500000" aria-describedby="budget-hint">
+          </div>
+          <div class="range-labels" aria-hidden="true">
+            <span>$300k</span>
+            <span>$800k</span>
+            <span>$1.5M</span>
+          </div>
+          <div class="input-row">
+            <div class="input-field">
+              <label for="input-budget-min" class="input-label">Min ($)</label>
+              <input type="number" id="input-budget-min" name="budgetMin" min="0" max="2000000" step="10000" value="0" class="text-input" placeholder="0">
+            </div>
+            <div class="input-field">
+              <label for="input-budget-max" class="input-label">Max ($)</label>
+              <input type="number" id="input-budget-max" value="1500000" min="100000" max="2000000" step="10000" class="text-input" placeholder="1,500,000">
+            </div>
+          </div>
+          <p id="budget-hint" class="field-hint">Filter resale prices based on your loan &amp; CPF approval</p>
+        </fieldset>
+
+        <!-- Filter: Property Size (sqm) -->
+        <fieldset class="filter-group">
+          <legend class="filter-label">
+            <span>Property Size (sqm)</span>
+            <span class="filter-value-display" id="size-val-display">All Sizes (50 - 160 sqm)</span>
+          </legend>
+          <div class="range-slider-wrapper">
+            <label for="filter-size-min" class="visually-hidden">Minimum Property Size in Square Meters</label>
+            <input type="range" id="filter-size-min" name="sizeMin" min="50" max="150" step="5" value="50" class="custom-range" aria-valuemin="50" aria-valuemax="150" aria-valuenow="50">
+          </div>
+          <div class="range-labels" aria-hidden="true">
+            <span>50 sqm (~3-Rm)</span>
+            <span>90 sqm (4-Rm)</span>
+            <span>150+ sqm (Exec)</span>
+          </div>
+        </fieldset>
+
+        <!-- Filter: Area / Town -->
+        <div class="filter-group">
+          <label for="filter-town" class="filter-label">Area / Town</label>
+          <div class="select-wrapper">
+            <select id="filter-town" name="town" class="custom-select">
+              <option value="ALL">All Singapore Towns</option>
+              <option value="ANG MO KIO">Ang Mo Kio (North-East)</option>
+              <option value="BEDOK">Bedok (East)</option>
+              <option value="BISHAN">Bishan (Central)</option>
+              <option value="BUKIT MERAH">Bukit Merah / Central</option>
+              <option value="CLEMENTI">Clementi (West)</option>
+              <option value="JURONG EAST">Jurong East (West Hub)</option>
+              <option value="JURONG WEST">Jurong West (West)</option>
+              <option value="PASIR RIS">Pasir Ris (East Coast)</option>
+              <option value="PUNGGOL">Punggol (Waterfront)</option>
+              <option value="QUEENSTOWN">Queenstown (City Fringe)</option>
+              <option value="SEMBAWANG">Sembawang (North)</option>
+              <option value="SENGKANG">Sengkang (North-East)</option>
+              <option value="TAMPINES">Tampines (East Hub)</option>
+              <option value="TOA PAYOH">Toa Payoh (Central)</option>
+              <option value="WOODLANDS">Woodlands (Regional Hub)</option>
+              <option value="YISHUN">Yishun (North)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filter: Flat Type -->
+        <div class="filter-group">
+          <label for="filter-flat-type" class="filter-label">Flat Type</label>
+          <div class="select-wrapper">
+            <select id="filter-flat-type" name="flatType" class="custom-select">
+              <option value="ALL">All Flat Types (3, 4, 5-Rm, Exec)</option>
+              <option value="3 ROOM">3 ROOM (~65 - 75 sqm)</option>
+              <option value="4 ROOM">4 ROOM (~90 - 105 sqm)</option>
+              <option value="5 ROOM">5 ROOM (~110 - 125 sqm)</option>
+              <option value="EXECUTIVE">EXECUTIVE / Maisonette (140+ sqm)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filter: Sunlight Ray / Solar Orientation Decision Criteria -->
+        <fieldset class="filter-group highlight-sunlight-group">
+          <legend class="filter-label">
+            <span class="sun-icon-inline" aria-hidden="true">&#9728;</span>
+            <span>Sunlight Ray &amp; Orientation</span>
+          </legend>
+          <p class="field-hint mb-2">Crucial Singapore homebuyer decision factor for cooling &amp; morning vs afternoon sun</p>
+          <div class="select-wrapper">
+            <select id="filter-sunlight" name="sunlightPreference" class="custom-select">
+              <option value="all">All Sunlight Orientations</option>
+              <option value="north_south">North-South (Breezy, No Afternoon Sun)</option>
+              <option value="morning_sun">East / North-East (Morning Sun Warmth)</option>
+              <option value="no_afternoon_sun">Shielded (Zero Direct West Glare)</option>
+              <option value="high_comfort">High Thermal Comfort Score (&ge; 90)</option>
+            </select>
+          </div>
+        </fieldset>
+
+        <!-- Filter: Minimum Remaining Lease -->
+        <div class="filter-group">
+          <label for="filter-lease-min" class="filter-label">Min. Remaining Lease</label>
+          <div class="select-wrapper">
+            <select id="filter-lease-min" name="leaseMin" class="custom-select">
+              <option value="0">Any Remaining Lease</option>
+              <option value="60">At least 60 Years</option>
+              <option value="75">At least 75 Years</option>
+              <option value="85">At least 85 Years (Fresh Lease)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filter: Sort By -->
+        <div class="filter-group">
+          <label for="filter-sort-by" class="filter-label">Sort Listings By</label>
+          <div class="select-wrapper">
+            <select id="filter-sort-by" name="sortBy" class="custom-select">
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="sunlight_score_desc">Sunlight &amp; Thermal Comfort Score</option>
+              <option value="psqm_asc">Price per sqm: Lowest</option>
+              <option value="lease_desc">Remaining Lease: Longest</option>
+              <option value="size_desc">Floor Area: Largest</option>
+            </select>
+          </div>
+        </div>
+
+      </form>
+    </aside>
+
+    <!-- Main Content Area: Dashboard, Views, Results, and Insights -->
+    <section class="dashboard-content" aria-label="HDB Flat Search Results and Analysis">
+      
+      <!-- Key Decision Factor Banner: Sunlight Ray & Orientation -->
+      <section class="sunlight-banner-card" aria-labelledby="sunlight-banner-title">
+        <div class="sunlight-banner-content">
+          <div class="banner-badge">
+            <span class="sun-glow-dot" aria-hidden="true"></span>
+            Homebuyer Sunlight Analysis
+          </div>
+          <h2 id="sunlight-banner-title" class="banner-title">Solar Ray Exposure &amp; Facade Orientation</h2>
+          <p class="banner-desc">
+            In Singapore’s tropical climate, direct afternoon west sun causes high heat retention, while North-South orientations offer cross-ventilation breezes and East-facing units provide gentle morning natural daylight. Use our <strong>Interactive Sunlight Ray Visualizer</strong> on any listing below to test solar ray angles across the day.
+          </p>
+        </div>
+        <div class="sunlight-quick-metrics" id="sunlight-metrics-summary">
+          <div class="quick-metric-item">
+            <span class="metric-num" id="stat-ns-count">--</span>
+            <span class="metric-label">North-South Breezy Units</span>
+          </div>
+          <div class="quick-metric-item">
+            <span class="metric-num" id="stat-morning-count">--</span>
+            <span class="metric-label">Morning Sun Units</span>
+          </div>
+          <div class="quick-metric-item">
+            <span class="metric-num" id="stat-comfort-pct">--%</span>
+            <span class="metric-label">High Thermal Comfort</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Navigation Tabs for Switching Between Views -->
+      <nav class="view-tabs-nav" role="tablist" aria-label="Explorer View Modes">
+        <button type="button" role="tab" id="tab-results" class="view-tab active" aria-selected="true" aria-controls="view-results-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Matching Flats (<span id="tab-count-badge">0</span>)
+        </button>
+
+        <button type="button" role="tab" id="tab-map" class="view-tab" aria-selected="false" aria-controls="view-map-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+          Map &amp; Solar Vectors
+        </button>
+
+        <button type="button" role="tab" id="tab-charts" class="view-tab" aria-selected="false" aria-controls="view-charts-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          Market Trends &amp; Price Charts
+        </button>
+
+        <button type="button" role="tab" id="tab-budget-buy" class="view-tab" aria-selected="false" aria-controls="view-budget-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+            <line x1="12" y1="18" x2="12" y2="20"></line>
+            <line x1="12" y1="4" x2="12" y2="6"></line>
+          </svg>
+          &ldquo;What Does My Budget Buy?&rdquo; Panel
+        </button>
+
+        <button type="button" role="tab" id="tab-gemini-chat" class="view-tab view-tab-ai" aria-selected="false" aria-controls="view-chat-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+          </svg>
+          Gemini AI Advisor <span class="ai-live-badge">AI</span>
+        </button>
+
+        <button type="button" role="tab" id="tab-discussions" class="view-tab view-tab-disqus" aria-selected="false" aria-controls="view-discussions-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          Community Discussions <span class="disqus-badge">Disqus</span>
+        </button>
+
+        <button type="button" role="tab" id="tab-datagov" class="view-tab view-tab-api" aria-selected="false" aria-controls="view-datagov-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+          Data.gov.sg API <span class="gov-api-badge">Gov.sg</span>
+        </button>
+
+        <button type="button" role="tab" id="tab-weather" class="view-tab view-tab-weather" aria-selected="false" aria-controls="view-weather-panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+          </svg>
+          Weather &amp; Solar Climate <span class="weather-api-badge">Open-Meteo</span>
+        </button>
+      </nav>
+
+      <!-- VIEW 1: Dynamic Results List of Matching Flats -->
+      <div id="view-results-panel" role="tabpanel" aria-labelledby="tab-results" class="tab-panel active">
+        
+        <!-- Summary Stats Header -->
+        <div class="results-header-summary">
+          <div>
+            <h3 class="results-title" id="results-count-title">Matching Resale Flats</h3>
+            <p class="results-subtitle" id="results-filter-summary">Showing all matching units</p>
+          </div>
+          <div class="summary-pills-row">
+            <div class="summary-pill">
+              <span class="pill-title">Average Price</span>
+              <span class="pill-value" id="summary-avg-price">$0</span>
+            </div>
+            <div class="summary-pill">
+              <span class="pill-title">Avg. Price / sqm</span>
+              <span class="pill-value" id="summary-avg-psqm">$0/sqm</span>
+            </div>
+            <div class="summary-pill">
+              <span class="pill-title">Avg. Lease</span>
+              <span class="pill-value" id="summary-avg-lease">0 yrs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State Indicator -->
+        <div id="loading-spinner-container" class="loading-container hidden" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Filtering HDB database &amp; computing solar angles...</p>
+        </div>
+
+        <!-- Empty State Message -->
+        <div id="empty-results-container" class="empty-state-card hidden" aria-live="polite">
+          <div class="empty-icon" aria-hidden="true">&#128269;</div>
+          <h4>No matching HDB flats found</h4>
+          <p>Try widening your budget range, decreasing minimum lease years, or selecting &ldquo;All Singapore Towns&rdquo;.</p>
+          <button type="button" id="btn-clear-filters-empty" class="btn-primary">Reset Filter Criteria</button>
+        </div>
+
+        <!-- Dynamic Flats Card Grid -->
+        <div id="flats-grid" class="flats-grid" aria-live="polite" aria-busy="false">
+          <!-- Populated dynamically by app.js -->
+        </div>
+
+        <!-- MAIN PAGE DISQUS COMMUNITY FORUM SECTION -->
+        <section class="main-page-disqus-section" id="main-disqus-section" aria-labelledby="main-disqus-heading">
+          <div class="main-disqus-header">
+            <div class="disqus-status-pill">
+              <span class="disqus-status-dot" aria-hidden="true"></span>
+              <span>Live Community Forum &bull; shortname: <strong>dreamwithinreach</strong></span>
+            </div>
+            <div class="main-disqus-title-row">
+              <div>
+                <h3 id="main-disqus-heading" class="main-disqus-title">💬 DreamWithinReach Main Community Discussion</h3>
+                <p class="main-disqus-subtitle">Ask questions, share unit reviews, discuss price negotiations, sunlight exposure, and housing grants with Singapore home buyers.</p>
+              </div>
+              <div class="main-disqus-actions">
+                <span class="disqus-comment-count disqus-badge-count" data-disqus-identifier="dreamwithinreach-main-page" id="main-disqus-count-badge">
+                  Comments
+                </span>
+                <button type="button" id="btn-reload-main-disqus" class="btn-disqus-reload" title="Refresh discussion thread">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                  </svg>
+                  <span>Reload</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Topic Pills for Main Page -->
+          <div class="main-disqus-controls">
+            <div class="main-disqus-topics-group">
+              <span class="disqus-label">Quick Topics:</span>
+              <div class="quick-topics-row">
+                <button type="button" class="quick-topic-chip active" data-topic-id="dreamwithinreach-main-page" data-topic-title="🇸🇬 DreamWithinReach Main Community Discussion">
+                  🏠 Main Discussion
+                </button>
+                <button type="button" class="quick-topic-chip" data-topic-id="sg-hdb-sunlight-guide-2026" data-topic-title="☀️ Solar Orientation & Thermal Comfort Guide">
+                  ☀️ Sunlight &amp; Facing
+                </button>
+                <button type="button" class="quick-topic-chip" data-topic-id="sg-cpf-housing-grants" data-topic-title="💰 CPF Housing Grants &amp; Budget Optimization">
+                  💰 Grants &amp; Budget
+                </button>
+                <button type="button" class="quick-topic-chip" data-topic-id="sg-mature-vs-non-mature-tradeoffs" data-topic-title="🏙️ Mature vs Non-Mature Estates Price Analysis">
+                  🏙️ Mature vs Non-Mature
+                </button>
+              </div>
+            </div>
+
+            <div class="main-disqus-lang-group">
+              <span class="disqus-label">Language:</span>
+              <span class="disqus-badge-count">English (en)</span>
+            </div>
+          </div>
+
+          <!-- Active Discussion Container Wrapper on Main Page -->
+          <div class="disqus-embed-wrapper main-disqus-embed" id="main-page-disqus-wrapper">
+            <div id="disqus_thread" class="disqus-thread-container" aria-live="polite">
+              <!-- Disqus JavaScript SDK renders iframe here -->
+            </div>
+            <noscript>
+              Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+            </noscript>
+          </div>
+        </section>
+      </div>
+
+      <!-- VIEW 2: Interactive Geocoded Map & Solar Orientation Vectors -->
+      <div id="view-map-panel" role="tabpanel" aria-labelledby="tab-map" class="tab-panel hidden">
+        <div class="panel-card map-view-card">
+          
+          <!-- Map Header & Interactive Controls Toolbar -->
+          <div class="map-card-header">
+            <div class="map-header-text">
+              <div class="map-title-row">
+                <span class="map-live-badge">&#127759; Live Geographic Visualisation</span>
+                <span id="map-stats-summary" class="map-stats-pill">Loading units...</span>
+              </div>
+              <h3 class="panel-title">Singapore HDB Resale &amp; Solar Orientation Map</h3>
+              <p class="panel-subtitle">Interactive spatial distribution of matching proposed units across Singapore towns with solar orientation vectors and estate price benchmarks.</p>
+            </div>
+
+            <!-- Map Control Actions Bar -->
+            <div class="map-controls-toolbar">
+              <!-- Town Quick Jump Selector -->
+              <div class="map-control-group">
+                <label for="map-town-select" class="map-control-label">&#127961; Estate Focus:</label>
+                <select id="map-town-select" class="map-select" aria-label="Focus on specific Singapore estate">
+                  <option value="ALL">All Singapore Estates</option>
+                  <option value="ANG MO KIO">Ang Mo Kio</option>
+                  <option value="BEDOK">Bedok</option>
+                  <option value="BISHAN">Bishan</option>
+                  <option value="BUKIT BATOK">Bukit Batok</option>
+                  <option value="BUKIT MERAH">Bukit Merah</option>
+                  <option value="BUKIT PANJANG">Bukit Panjang</option>
+                  <option value="CHOA CHU KANG">Choa Chu Kang</option>
+                  <option value="CLEMENTI">Clementi</option>
+                  <option value="GEYLANG">Geylang</option>
+                  <option value="HOUGANG">Hougang</option>
+                  <option value="JURONG EAST">Jurong East</option>
+                  <option value="JURONG WEST">Jurong West</option>
+                  <option value="KALLANG/WHAMPOA">Kallang / Whampoa</option>
+                  <option value="PASIR RIS">Pasir Ris</option>
+                  <option value="PUNGGOL">Punggol</option>
+                  <option value="QUEENSTOWN">Queenstown</option>
+                  <option value="SEMBAWANG">Sembawang</option>
+                  <option value="SENGKANG">Sengkang</option>
+                  <option value="SERANGOON">Serangoon</option>
+                  <option value="TAMPINES">Tampines</option>
+                  <option value="TOA PAYOH">Toa Payoh</option>
+                  <option value="WOODLANDS">Woodlands</option>
+                  <option value="YISHUN">Yishun</option>
+                </select>
+              </div>
+
+              <!-- Layer Toggles -->
+              <div class="map-toggles-row">
+                <button type="button" id="toggle-layer-rays" class="map-layer-btn active" data-layer="rays" title="Toggle Solar Orientation Vector Rays">
+                  <span class="layer-indicator"></span> &#9728; Solar Rays
+                </button>
+                <button type="button" id="toggle-layer-prices" class="map-layer-btn active" data-layer="prices" title="Toggle Unit Price Tags">
+                  <span class="layer-indicator"></span> &#128178; Price Tags
+                </button>
+                <button type="button" id="toggle-layer-towns" class="map-layer-btn active" data-layer="towns" title="Toggle Town Boundaries &amp; Density">
+                  <span class="layer-indicator"></span> &#127960; Estates &amp; Density
+                </button>
+              </div>
+
+              <!-- Zoom & Pan Controls -->
+              <div class="map-zoom-buttons">
+                <button type="button" id="btn-map-zoom-in" class="btn-map-icon" title="Zoom In" aria-label="Zoom In on Map">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+                <button type="button" id="btn-map-zoom-out" class="btn-map-icon" title="Zoom Out" aria-label="Zoom Out on Map">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+                <button type="button" id="btn-map-reset-zoom" class="btn-map-icon" title="Reset View" aria-label="Reset Map to All Singapore">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Map Orientation Color Legend -->
+            <div class="map-legend-bar">
+              <span class="legend-title">Orientation &amp; Thermal Legend:</span>
+              <div class="legend-items-list">
+                <button type="button" class="legend-pill active" data-facing-filter="all">
+                  <span class="legend-dot dot-all"></span> All (${state.data.flats ? state.data.flats.length : 0})
+                </button>
+                <button type="button" class="legend-pill" data-facing-filter="north-south">
+                  <span class="legend-dot dot-cool"></span> North-South / Cool (No West Sun)
+                </button>
+                <button type="button" class="legend-pill" data-facing-filter="morning">
+                  <span class="legend-dot dot-morning"></span> Morning Sun (East / NE / SE)
+                </button>
+                <button type="button" class="legend-pill" data-facing-filter="west">
+                  <span class="legend-dot dot-west"></span> Afternoon Sun (West / NW / SW)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Singapore SVG Map Canvas Container -->
+          <div class="interactive-map-container" id="map-container">
+            
+            <svg id="sg-map-svg" viewBox="0 0 1000 620" class="sg-map-svg" role="img" aria-label="Interactive map of Singapore showing HDB flat locations and sunlight directions">
+              <defs>
+                <!-- SVG Filters for marker drop shadow & ambient glowing rays -->
+                <filter id="marker-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.6"/>
+                </filter>
+                <filter id="sun-ray-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
+                  <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                <linearGradient id="water-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0369a1" stop-opacity="0.5"/>
+                  <stop offset="100%" stop-color="#0284c7" stop-opacity="0.8"/>
+                </linearGradient>
+                <linearGradient id="island-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1e293b" stop-opacity="0.95"/>
+                  <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95"/>
+                </linearGradient>
+                <linearGradient id="catchment-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#064e3b" stop-opacity="0.45"/>
+                  <stop offset="100%" stop-color="#047857" stop-opacity="0.35"/>
+                </linearGradient>
+              </defs>
+
+              <!-- Zoom & Pan Dynamic Group -->
+              <g id="map-zoom-group">
+
+                <!-- 1. Background Grid & Coastline Ambience -->
+                <g class="map-grid-layer" aria-hidden="true">
+                  <line x1="100" y1="100" x2="900" y2="100" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                  <line x1="100" y1="200" x2="900" y2="200" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                  <line x1="100" y1="300" x2="900" y2="300" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                  <line x1="100" y1="400" x2="900" y2="400" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                  <line x1="100" y1="500" x2="900" y2="500" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                  <line x1="200" y1="50" x2="200" y2="550" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                  <line x1="400" y1="50" x2="400" y2="550" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                  <line x1="600" y1="50" x2="600" y2="550" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                  <line x1="800" y1="50" x2="800" y2="550" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                </g>
+
+                <!-- 2. Singapore Mainland Island Detailed Contours -->
+                <g class="map-landmass-layer">
+                  <!-- Main Singapore Island Accurate Geometry -->
+                  <path class="sg-island-path" d="
+                    M 80 340 
+                    C 85 300, 110 240, 160 200 
+                    C 210 160, 260 120, 340 90 
+                    C 390 75, 450 70, 520 72 
+                    C 580 75, 650 90, 710 115 
+                    C 760 135, 820 170, 870 210 
+                    C 910 245, 930 270, 920 300 
+                    C 900 340, 850 380, 800 415 
+                    C 740 455, 670 485, 600 500 
+                    C 530 515, 460 520, 390 510 
+                    C 310 495, 240 470, 180 435 
+                    C 130 405, 90 375, 80 340 Z
+                  " fill="url(#island-grad)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="2" />
+
+                  <!-- Coastal Features: Western Water Catchment & Tuas Peninsulas -->
+                  <path class="sg-offshore-path" d="M 60 360 C 50 390, 70 430, 110 440 C 130 410, 120 370, 60 360 Z" />
+                  <!-- Jurong Island -->
+                  <path class="sg-offshore-path" d="M 170 465 C 190 450, 240 455, 260 480 C 250 505, 200 515, 175 500 Z" />
+                  <!-- Sentosa Island -->
+                  <path class="sg-offshore-path" d="M 450 535 C 470 525, 520 530, 540 545 C 520 560, 470 560, 450 535 Z" />
+                  <!-- Pulau Ubin (North-East) -->
+                  <path class="sg-offshore-path" d="M 800 130 C 820 120, 860 125, 880 140 C 860 155, 820 150, 800 130 Z" />
+                  <!-- Pulau Tekong (East) -->
+                  <path class="sg-offshore-path" d="M 910 135 C 935 125, 970 140, 965 175 C 940 185, 915 165, 910 135 Z" />
+                </g>
+
+                <!-- 3. Nature Reserves & Water Catchment Areas -->
+                <g class="map-nature-layer" aria-hidden="true">
+                  <!-- Central Catchment Nature Reserve (MacRitchie / Pierce / Seletar) -->
+                  <path class="sg-catchment-path" d="
+                    M 440 210 
+                    C 460 190, 500 185, 530 200 
+                    C 555 215, 560 250, 545 285 
+                    C 530 320, 480 340, 450 330 
+                    C 425 315, 415 280, 425 245 Z
+                  " fill="url(#catchment-grad)" stroke="#10b981" stroke-width="1" stroke-dasharray="3 3" opacity="0.8" />
+                  <text x="485" y="260" class="nature-label">Central Catchment</text>
+
+                  <!-- Lower Seletar Reservoir -->
+                  <ellipse cx="560" cy="180" rx="28" ry="12" fill="url(#water-grad)" opacity="0.7"/>
+                  <!-- MacRitchie Reservoir -->
+                  <path d="M 460 310 Q 485 300 515 315 Q 490 325 460 310" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+                  <!-- Bedok Reservoir -->
+                  <ellipse cx="760" cy="360" rx="20" ry="10" fill="url(#water-grad)" opacity="0.7"/>
+                  <text x="760" y="363" class="reservoir-label">Bedok Res.</text>
+                  <!-- Jurong Lake -->
+                  <ellipse cx="270" cy="380" rx="14" ry="24" fill="url(#water-grad)" opacity="0.7"/>
+                  <text x="270" y="384" class="reservoir-label">Jurong Lk</text>
+                  <!-- Punggol / Serangoon Waterway -->
+                  <path d="M 720 140 Q 755 170 780 210" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+                </g>
+
+                <!-- 4. Major Expressway & MRT Transit Skeleton Lines -->
+                <g class="map-transit-layer" aria-hidden="true">
+                  <!-- PIE Expressway (West to East) -->
+                  <path d="M 160 410 Q 380 370 540 370 T 850 300" class="transit-line pie-line" />
+                  <!-- CTE Expressway (North to South) -->
+                  <path d="M 520 110 L 510 270 L 490 470" class="transit-line cte-line" />
+                  <!-- KPE Expressway (North-East to South) -->
+                  <path d="M 720 160 L 680 290 L 590 460" class="transit-line kpe-line" />
+                  <!-- AYE Expressway (West Coast) -->
+                  <path d="M 140 450 Q 300 450 480 500" class="transit-line aye-line" />
+                  <!-- SLE / TPE Expressway (North to East Coast) -->
+                  <path d="M 370 120 Q 570 100 780 170" class="transit-line tpe-line" />
+                </g>
+
+                <!-- 5. Interactive Town Planning Zones (Clickable Estates) -->
+                <g id="map-town-regions" class="map-town-regions-layer"></g>
+
+                <!-- 6. Town Density Heatmap / Bubble Circles -->
+                <g id="map-density-layer" class="map-density-layer"></g>
+
+                <!-- 7. Dynamic Solar Orientation Vector Rays Layer -->
+                <g id="map-rays-layer" class="map-rays-layer"></g>
+
+                <!-- 8. Dynamic Geocoded Unit Pins Layer -->
+                <g id="map-pins-layer" class="map-pins-layer"></g>
+
+                <!-- 9. Unit Price Tags Layer -->
+                <g id="map-prices-layer" class="map-prices-layer"></g>
+
+              </g>
+
+              <!-- Compass Rose & Sun Arc Overlay (HUD) -->
+              <g class="map-compass" transform="translate(90, 110)" aria-hidden="true">
+                <circle cx="0" cy="0" r="42" class="compass-dial" />
+                <circle cx="0" cy="0" r="32" class="compass-inner-ring" />
+                <line x1="0" y1="-38" x2="0" y2="38" class="compass-needle" />
+                <line x1="-38" y1="0" x2="38" y2="0" class="compass-needle" />
+                <!-- Solar azimuth arc from East (Sunrise 90deg) to West (Sunset 270deg) -->
+                <path d="M 28 0 A 28 28 0 0 1 -28 0" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3 2" opacity="0.8"/>
+                <polygon points="0,-36 -4,-22 4,-22" fill="#ef4444" />
+                <polygon points="0,36 -4,22 4,22" fill="#94a3b8" />
+                <text x="0" y="-24" text-anchor="middle" class="compass-label-bold">N</text>
+                <text x="0" y="32" text-anchor="middle" class="compass-label">S</text>
+                <text x="32" y="4" text-anchor="middle" class="compass-label-east">E (Sunrise)</text>
+                <text x="-32" y="4" text-anchor="middle" class="compass-label-west">W (Sunset)</text>
+                <text x="0" y="48" text-anchor="middle" class="compass-subtext">SINGAPORE (1.35°N)</text>
+              </g>
+
+              <!-- Map Scale Indicator (HUD) -->
+              <g class="map-scale-hud" transform="translate(840, 580)" aria-hidden="true">
+                <line x1="0" y1="0" x2="80" y2="0" stroke="#94a3b8" stroke-width="2"/>
+                <line x1="0" y1="-4" x2="0" y2="4" stroke="#94a3b8" stroke-width="1.5"/>
+                <line x1="40" y1="-3" x2="40" y2="3" stroke="#94a3b8" stroke-width="1"/>
+                <line x1="80" y1="-4" x2="80" y2="4" stroke="#94a3b8" stroke-width="1.5"/>
+                <text x="40" y="-6" text-anchor="middle" class="scale-text">5 km</text>
+              </g>
+            </svg>
+
+            <!-- Floating Hover Tooltip inside Map -->
+            <div id="map-hover-tooltip" class="map-hover-tooltip hidden" role="tooltip" aria-hidden="true"></div>
+
+          </div>
+
+          <!-- Map Unit Details Slide-Up Inspector Card -->
+          <div id="map-flat-info" class="map-flat-info-bar hidden" aria-live="polite">
+            <div class="map-info-main-content">
+              <div class="map-info-badge-row">
+                <span id="map-info-town-badge" class="badge-town">PUNGGOL</span>
+                <span id="map-info-type-badge" class="badge-type">4 ROOM</span>
+                <span id="map-info-sun-badge" class="badge-sun-comfort">&#9728; High Thermal Comfort</span>
+              </div>
+              <h4 id="map-info-title" class="map-info-flat-title">Blk 271C Punggol Walk</h4>
+              <div class="map-info-stats-grid">
+                <div class="info-stat-item">
+                  <span class="stat-lbl">Resale Price</span>
+                  <strong id="map-info-price" class="stat-val-price">$645,000</strong>
+                </div>
+                <div class="info-stat-item">
+                  <span class="stat-lbl">Floor Area / Rate</span>
+                  <span id="map-info-area" class="stat-val">93 sqm ($6,935/sqm)</span>
+                </div>
+                <div class="info-stat-item">
+                  <span class="stat-lbl">Remaining Lease</span>
+                  <span id="map-info-lease" class="stat-val">90 yrs 2 mos</span>
+                </div>
+                <div class="info-stat-item">
+                  <span class="stat-lbl">Solar Orientation</span>
+                  <span id="map-info-facing" class="stat-val">North-South (No West Sun)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="map-info-actions-cluster">
+              <button type="button" id="btn-inspect-map-flat" class="btn-inspect-sun-lg">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="5"></circle>
+                  <line x1="12" y1="1" x2="12" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="23"></line>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                  <line x1="1" y1="12" x2="3" y2="12"></line>
+                  <line x1="21" y1="12" x2="23" y2="12"></line>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <span>Inspect Sun Rays</span>
+              </button>
+              <button type="button" id="btn-ask-gemini-map" class="btn-ask-gemini-lg">
+                <span aria-hidden="true">&#10024;</span>
+                <span>Ask Gemini Advisor</span>
+              </button>
+              <button type="button" id="btn-close-map-info" class="btn-close-info" title="Close inspector panel" aria-label="Close inspector">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VIEW 3: Market Charts: Price Trends & Distribution -->
+      <div id="view-charts-panel" role="tabpanel" aria-labelledby="tab-charts" class="tab-panel hidden">
+        <div class="charts-grid-container">
+          
+          <!-- Chart 1: Resale Price Trends by Month -->
+          <article class="panel-card chart-card" aria-labelledby="chart-trends-title">
+            <div class="chart-header">
+              <div>
+                <h3 id="chart-trends-title" class="panel-title">Price Trends by Month</h3>
+                <p class="panel-subtitle">Average and range of HDB resale prices over recent transaction months</p>
+              </div>
+              <div class="chart-badge">Monthly Resale Trend</div>
+            </div>
+            <div class="chart-svg-wrapper">
+              <svg id="chart-price-trends-svg" viewBox="0 0 520 280" class="chart-svg" role="img" aria-label="Line and area chart showing HDB price trends by month"></svg>
+            </div>
+            <div class="chart-footer-note">
+              <span>&#9432; Trends aggregate real transactional records for selected filtering criteria.</span>
+            </div>
+          </article>
+
+          <!-- Chart 2: Flat Distribution by Town -->
+          <article class="panel-card chart-card" aria-labelledby="chart-dist-title">
+            <div class="chart-header">
+              <div>
+                <h3 id="chart-dist-title" class="panel-title">Listing Distribution by Town</h3>
+                <p class="panel-subtitle">Number of matching units and average price per square meter by estate</p>
+              </div>
+              <div class="chart-badge">Town Breakdown</div>
+            </div>
+            <div class="chart-svg-wrapper">
+              <svg id="chart-town-dist-svg" viewBox="0 0 520 280" class="chart-svg" role="img" aria-label="Bar chart showing distribution of flats and average price per sqm across Singapore towns"></svg>
+            </div>
+            <div class="chart-footer-note">
+              <span>&#9432; Compare volume and $/sqm across non-mature vs mature estates.</span>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- VIEW 4: "What Does My Budget Buy?" Panel (Area vs Remaining Lease) -->
+      <div id="view-budget-panel" role="tabpanel" aria-labelledby="tab-budget-buy" class="tab-panel hidden">
+        <article class="panel-card budget-buy-card" aria-labelledby="budget-panel-title">
+          <div class="budget-panel-header">
+            <div>
+              <div class="banner-badge">Affordability &amp; Lease Matrix</div>
+              <h3 id="budget-panel-title" class="panel-title">&ldquo;What Does My Budget Buy?&rdquo; Trade-off Analyzer</h3>
+              <p class="panel-subtitle">
+                Compare the direct trade-off between <strong>Floor Area (sqm)</strong> and <strong>Remaining Lease (Years)</strong> within your selected budget.
+              </p>
+            </div>
+            <div class="budget-summary-box">
+              <span class="budget-box-label">Current Budget Max</span>
+              <span class="budget-box-val" id="matrix-current-budget">$1,500,000</span>
+            </div>
+          </div>
+
+          <!-- Affordability Matrix Table -->
+          <div class="matrix-table-container">
+            <table class="budget-matrix-table" aria-label="HDB floor area square meters versus remaining lease years affordability matrix">
+              <thead>
+                <tr>
+                  <th scope="col" class="th-lease-header">Remaining Lease Category</th>
+                  <th scope="col">Compact (&lt;70 sqm)</th>
+                  <th scope="col">Standard (70 - 95 sqm)</th>
+                  <th scope="col">Spacious (96 - 120 sqm)</th>
+                  <th scope="col">Jumbo / Exec (&gt;120 sqm)</th>
+                </tr>
+              </thead>
+              <tbody id="budget-matrix-tbody">
+                <!-- Populated dynamically by app.js -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Key Takeaway Insight Box -->
+          <div class="budget-insights-grid">
+            <div class="insight-box">
+              <h4 class="insight-title">&#128161; The Lease vs. Space Trade-off</h4>
+              <p id="insight-lease-vs-space" class="insight-desc">
+                For a given budget, older flats (50-65 years lease) offer significantly larger living area in central mature estates (e.g. Bishan, Queenstown, Toa Payoh), whereas newer 85+ year lease flats provide long-term CPF financing security in modern waterfront estates like Punggol and Sengkang.
+              </p>
+            </div>
+            <div class="insight-box">
+              <h4 class="insight-title">&#9728; Sunlight Ray Impact on Resale Value</h4>
+              <p class="insight-desc">
+                Units with North-South orientations and zero afternoon sun command a 5% - 8% resale premium in Singapore due to reduced air-conditioning electricity loads and cooler indoor thermal comfort.
+              </p>
+            </div>
+          </div>
+
+        </article>
+      </div>
+
+      <!-- VIEW 5: Gemini AI Property & Thermal Comfort Advisor -->
+      <div id="view-chat-panel" role="tabpanel" aria-labelledby="tab-gemini-chat" class="tab-panel hidden">
+        <article class="panel-card gemini-chat-card" aria-labelledby="gemini-chat-title">
+          
+          <!-- Chat Header with Grounded Search Context -->
+          <div class="chat-header-bar">
+            <div class="chat-header-info">
+              <div class="ai-status-pill">
+                <span class="ai-sparkle-dot" aria-hidden="true"></span>
+                <span>Powered by Gemini 3.7 Flash</span>
+              </div>
+              <h3 id="gemini-chat-title" class="chat-main-title">Gemini HDB Resale &amp; Solar Advisor</h3>
+              <p class="chat-main-subtitle">Personalized advice grounded in your live search criteria, remaining lease valuation, and solar ray thermal comfort.</p>
+            </div>
+
+            <!-- Active Criteria Badges Bar -->
+            <div class="chat-criteria-context-box">
+              <div class="context-label-row">
+                <span class="context-title">&#128204; Active Buyer Criteria Grounding</span>
+                <button type="button" id="btn-sync-chat-criteria" class="btn-sync-criteria" title="Update AI context with latest filter criteria">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                  </svg>
+                  Sync Filters
+                </button>
+              </div>
+              <div class="context-tags-flow" id="chat-context-tags">
+                <span class="context-tag" id="tag-budget-ctx">Budget: $300k - $1.5M</span>
+                <span class="context-tag" id="tag-town-ctx">Town: All Estates</span>
+                <span class="context-tag" id="tag-type-ctx">Type: Any Type</span>
+                <span class="context-tag" id="tag-lease-ctx">Min Lease: Any</span>
+                <span class="context-tag" id="tag-sun-ctx">Facing: All Orientations</span>
+                <span class="context-tag tag-highlight" id="tag-matches-ctx">-- Matches</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggested Starter Prompts Flow -->
+          <div class="prompt-starters-section" aria-label="Suggested questions for Gemini Advisor">
+            <span class="starters-label">&#128161; Quick Property Strategy Questions:</span>
+            <div class="starters-chips-row">
+              <button type="button" class="prompt-chip" data-prompt="What is the absolute best buy unit in this list for my budget and why? Compare price per sqm and remaining lease.">
+                <span>&#128142;</span> Best value buy for my budget
+              </button>
+              <button type="button" class="prompt-chip" data-prompt="Which matching units have the coolest thermal comfort with no afternoon sun? Detail air conditioning and energy bill impact.">
+                <span>&#9728;</span> Coolest units with zero west sun
+              </button>
+              <button type="button" class="prompt-chip" data-prompt="Analyze the trade-off between remaining lease decay vs floor space for my criteria. Should I buy an older larger flat or a newer compact one?">
+                <span>&#9878;</span> Lease decay vs living space trade-off
+              </button>
+              <button type="button" class="prompt-chip" data-prompt="What CPF Housing Grants (e.g. Enhanced Housing Grant, Family Grant, Proximity Housing Grant) could I qualify for based on this price tier?">
+                <span>&#128176;</span> CPF Housing Grants breakdown
+              </button>
+              <button type="button" class="prompt-chip" data-prompt="Compare mature vs non-mature estate choices available under my current budget limit. Where is capital appreciation stronger?">
+                <span>&#127961;</span> Mature vs Non-Mature estates comparison
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Messages Scrollable Stream -->
+          <div class="chat-messages-container" id="chat-messages-stream" role="log" aria-live="polite" aria-label="Conversation with Gemini Property Advisor">
+            <!-- Messages rendered dynamically by app.js -->
+          </div>
+
+          <!-- Chat Input Area -->
+          <div class="chat-input-wrapper">
+            <form id="chat-form" class="chat-input-form" novalidate>
+              <div class="input-container-glass">
+                <textarea 
+                  id="chat-user-input" 
+                  class="chat-textarea" 
+                  rows="2" 
+                  placeholder="Ask Gemini anything (e.g. 'Which unit in Tampines gives the highest lease for $600k?', 'Will a west-facing bedroom be too hot?')..." 
+                  aria-label="Message to Gemini Property Advisor"
+                ></textarea>
+                <div class="chat-actions-row">
+                  <div class="chat-left-actions">
+                    <button type="button" id="btn-clear-chat" class="btn-chat-subtle" title="Reset chat history">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                      Clear History
+                    </button>
+                  </div>
+                  <button type="submit" id="btn-send-chat" class="btn-send-message" aria-label="Send message to Gemini Advisor">
+                    <span>Send Query</span>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+        </article>
+      </div>
+
+      <!-- VIEW 6: Community Discussions & Reviews (Disqus Embed) -->
+      <div id="view-discussions-panel" role="tabpanel" aria-labelledby="tab-discussions" class="tab-panel hidden">
+        <article class="panel-card disqus-view-card" aria-labelledby="disqus-main-title">
+          
+          <!-- Disqus Forum Header -->
+          <div class="disqus-header-bar">
+            <div class="disqus-header-info">
+              <div class="disqus-status-pill">
+                <span class="disqus-status-dot" aria-hidden="true"></span>
+                <span>Powered by Disqus &bull; shortname: <strong>dreamwithinreach</strong></span>
+              </div>
+              <h3 id="disqus-main-title" class="disqus-title">Singapore HDB &amp; Solar Orientation Community Forum</h3>
+              <p class="disqus-subtitle">Share reviews, neighborhood insights, renovation ideas, and daylight thermal comfort experiences with fellow Singapore home buyers.</p>
+            </div>
+
+            <!-- Disqus Configuration & Language Switcher Toolbar -->
+            <div class="disqus-toolbar-card">
+              <div class="disqus-toolbar-grid">
+                
+                <!-- Topic / Article Selector -->
+                <div class="disqus-select-group">
+                  <label for="disqus-topic-select" class="disqus-label">&#128214; Discussion Thread / Topic:</label>
+                  <select id="disqus-topic-select" class="disqus-select" aria-label="Select discussion topic or unit">
+                    <optgroup label="General Housing &amp; Solar Guides">
+                      <option value="sg-hdb-sunlight-guide-2026" selected>🇸🇬 General HDB Resale &amp; Solar Discussion</option>
+                      <option value="sg-west-sun-thermal-tips">☀️ Afternoon Sun (West Sun) &amp; Heat Management</option>
+                      <option value="sg-cpf-housing-grants">💰 CPF Housing Grants &amp; Budget Optimization</option>
+                      <option value="sg-mature-vs-non-mature-tradeoffs">🏙️ Mature vs Non-Mature Estates Price Analysis</option>
+                    </optgroup>
+                    <optgroup id="disqus-flats-optgroup" label="Specific HDB Listing Units">
+                      <!-- Populated dynamically by app.js -->
+                    </optgroup>
+                  </select>
+                </div>
+
+                <!-- Language Indicator (English) -->
+                <div class="disqus-select-group">
+                  <label for="disqus-language-select" class="disqus-label">&#127760; Language:</label>
+                  <select id="disqus-language-select" class="disqus-select" aria-label="Select Disqus interface language">
+                    <option value="en" selected>English (en)</option>
+                  </select>
+                </div>
+
+                <!-- Refresh / Reload Thread Button -->
+                <div class="disqus-action-group">
+                  <button type="button" id="btn-reload-disqus" class="btn-disqus-reload" title="Reload active discussion thread">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                    </svg>
+                    <span>Reload Thread</span>
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- Active Thread Metadata Info Bar -->
+              <div class="disqus-active-info-bar">
+                <div class="disqus-meta-item">
+                  <span class="meta-label">Active Thread:</span>
+                  <span id="disqus-active-title" class="meta-value">🇸🇬 General HDB Resale &amp; Solar Discussion</span>
+                </div>
+                <div class="disqus-meta-item">
+                  <span class="meta-label">Identifier:</span>
+                  <code id="disqus-active-id" class="meta-code">sg-hdb-sunlight-guide-2026</code>
+                </div>
+                <div class="disqus-meta-item">
+                  <span class="meta-label">Language:</span>
+                  <span id="disqus-active-lang" class="meta-value">en (English)</span>
+                </div>
+                <div class="disqus-meta-item">
+                  <span class="meta-label">Comments:</span>
+                  <span class="disqus-comment-count disqus-badge-count" data-disqus-identifier="sg-hdb-sunlight-guide-2026" id="disqus-thread-count-badge">
+                    Comments
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Disqus Container in Discussions Tab -->
+          <div class="disqus-embed-wrapper" id="discussions-tab-disqus-wrapper">
+            <noscript>
+              Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+            </noscript>
+          </div>
+
+        </article>
+      </div>
+
+      <!-- VIEW 7: Official Singapore Data.gov.sg API Explorer & Real-Time Feed -->
+      <div id="view-datagov-panel" role="tabpanel" aria-labelledby="tab-datagov" class="tab-panel hidden">
+        <article class="panel-card datagov-view-card" aria-labelledby="datagov-main-title">
+          
+          <!-- Data.gov.sg Header Bar -->
+          <div class="datagov-header-bar">
+            <div class="datagov-header-info">
+              <div class="datagov-status-pill">
+                <span class="datagov-status-dot" aria-hidden="true"></span>
+                <span>Official Open Data API &bull; Resource ID: <strong id="datagov-resource-display">d_8b84c4ee58e3cfc0ece0d773c8ca6abc</strong></span>
+              </div>
+              <h3 id="datagov-main-title" class="datagov-title">Singapore Data.gov.sg Official HDB Resale API</h3>
+              <p class="datagov-subtitle">Direct integration with Singapore Government's open data platform for HDB resale flat prices (Jan 2017 onwards). Query live transaction records, apply multi-parameter filters, inspect official metadata field schemas, and generate cURL &amp; Fetch snippets.</p>
+            </div>
+          </div>
+
+          <!-- Quick Preset Queries Bar -->
+          <div class="datagov-presets-card">
+            <div class="presets-label-row">
+              <span class="presets-label">&#9889; Official Quick API Presets:</span>
+              <span class="presets-hint">Click any preset to execute live against Data.gov.sg</span>
+            </div>
+            <div class="presets-button-group">
+              <button type="button" class="btn-preset-api active" id="btn-preset-first5">
+                <span class="preset-icon">&#128203;</span>
+                <span class="preset-text">First 5 Resale Transactions</span>
+                <span class="preset-tag">limit=5</span>
+              </button>
+
+              <button type="button" class="btn-preset-api" id="btn-preset-tampines4rm">
+                <span class="preset-icon">&#127960;</span>
+                <span class="preset-text">4-Room Flats in Tampines</span>
+                <span class="preset-tag">filters={town, flat_type}</span>
+              </button>
+
+              <button type="button" class="btn-preset-api" id="btn-preset-metadata">
+                <span class="preset-icon">&#128736;</span>
+                <span class="preset-text">Dataset Metadata &amp; Fields</span>
+                <span class="preset-tag">schema</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Query Builder Form -->
+          <div class="datagov-query-builder">
+            <div class="query-builder-header">
+              <h4 class="query-builder-title">&#128269; Custom API Query Builder</h4>
+              <span class="query-builder-desc">Construct customized requests with filters, pagination, and sorting</span>
+            </div>
+
+            <form id="datagov-query-form" class="datagov-form-grid">
+              
+              <!-- Town Filter -->
+              <div class="form-group-api">
+                <label for="api-filter-town" class="api-form-label">Town Filter:</label>
+                <select id="api-filter-town" class="api-form-select">
+                  <option value="ALL">All Towns (Whole Singapore)</option>
+                  <option value="TAMPINES">Tampines</option>
+                  <option value="PUNGGOL">Punggol</option>
+                  <option value="SENGKANG">Sengkang</option>
+                  <option value="WOODLANDS">Woodlands</option>
+                  <option value="YISHUN">Yishun</option>
+                  <option value="BEDOK">Bedok</option>
+                  <option value="JURONG WEST">Jurong West</option>
+                  <option value="QUEENSTOWN">Queenstown</option>
+                  <option value="BISHAN">Bishan</option>
+                  <option value="ANG MO KIO">Ang Mo Kio</option>
+                  <option value="TOA PAYOH">Toa Payoh</option>
+                  <option value="BUKIT MERAH">Bukit Merah</option>
+                  <option value="KALLANG/WHAMPOA">Kallang/Whampoa</option>
+                </select>
+              </div>
+
+              <!-- Flat Type Filter -->
+              <div class="form-group-api">
+                <label for="api-filter-type" class="api-form-label">Flat Type:</label>
+                <select id="api-filter-type" class="api-form-select">
+                  <option value="ALL">All Flat Types</option>
+                  <option value="3 ROOM">3 ROOM</option>
+                  <option value="4 ROOM">4 ROOM</option>
+                  <option value="5 ROOM">5 ROOM</option>
+                  <option value="EXECUTIVE">EXECUTIVE</option>
+                  <option value="2 ROOM">2 ROOM</option>
+                </select>
+              </div>
+
+              <!-- Limit -->
+              <div class="form-group-api">
+                <label for="api-param-limit" class="api-form-label">Limit (Records):</label>
+                <select id="api-param-limit" class="api-form-select">
+                  <option value="5" selected>5 records</option>
+                  <option value="10">10 records</option>
+                  <option value="20">20 records</option>
+                  <option value="50">50 records</option>
+                  <option value="100">100 records</option>
+                </select>
+              </div>
+
+              <!-- Full Text Search / Query -->
+              <div class="form-group-api">
+                <label for="api-param-q" class="api-form-label">Keyword Search (q):</label>
+                <input type="text" id="api-param-q" class="api-form-input" placeholder="e.g. Tampines, Street 83, Model A" />
+              </div>
+
+              <!-- Submit Buttons -->
+              <div class="form-action-api">
+                <button type="submit" id="btn-execute-api" class="btn-api-primary">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>Execute API Request</span>
+                </button>
+                <button type="button" id="btn-reset-api-form" class="btn-api-secondary">
+                  Reset
+                </button>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Active API Endpoint & Request URL Bar -->
+          <div class="datagov-request-url-card">
+            <div class="request-url-header">
+              <span class="request-method-badge">GET</span>
+              <span class="request-url-label">Endpoint URL:</span>
+              <div class="request-actions">
+                <button type="button" id="btn-copy-url" class="btn-code-action" title="Copy endpoint URL">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span>Copy URL</span>
+                </button>
+                <button type="button" id="btn-copy-curl" class="btn-code-action" title="Copy cURL command">
+                  <span>cURL</span>
+                </button>
+                <button type="button" id="btn-copy-fetch" class="btn-code-action" title="Copy JS fetch code">
+                  <span>Fetch()</span>
+                </button>
+                <a id="link-direct-datagov" href="https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&limit=5" target="_blank" rel="noopener noreferrer" class="btn-code-action external-link" title="Open directly on data.gov.sg">
+                  <span>Open in New Tab &#8599;</span>
+                </a>
+              </div>
+            </div>
+            <div class="request-url-display">
+              <code id="display-request-url">https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc&amp;limit=5</code>
+            </div>
+          </div>
+
+          <!-- Live API Response Area (Tabs: Table View, JSON Response, Metadata Schema) -->
+          <div class="datagov-response-container">
+            <div class="response-header-tabs">
+              <div class="response-tab-group">
+                <button type="button" class="resp-tab active" id="tab-resp-table" data-target="resp-view-table">&#128202; Tabular Records (<span id="resp-record-count">5</span>)</button>
+                <button type="button" class="resp-tab" id="tab-resp-json" data-target="resp-view-json">&#128203; Raw JSON Response</button>
+                <button type="button" class="resp-tab" id="tab-resp-schema" data-target="resp-view-schema">&#128736; Schema &amp; Fields Metadata</button>
+              </div>
+              <div class="response-status-info">
+                <span class="badge-status-ok" id="resp-status-badge">&#10003; 200 OK</span>
+                <span class="resp-time-badge" id="resp-time-badge">Latency: ~120ms</span>
+              </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="api-loading-state" class="api-loading-overlay hidden">
+              <div class="spinner"></div>
+              <span>Fetching official live data from Data.gov.sg...</span>
+            </div>
+
+            <!-- TAB 1: Live Tabular Records -->
+            <div id="resp-view-table" class="resp-view-panel active">
+              <div class="table-scroll-container">
+                <table class="datagov-table" id="datagov-results-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">_id</th>
+                      <th scope="col">Month</th>
+                      <th scope="col">Town</th>
+                      <th scope="col">Flat Type</th>
+                      <th scope="col">Block</th>
+                      <th scope="col">Street Name</th>
+                      <th scope="col">Storey Range</th>
+                      <th scope="col">Floor Area (sqm)</th>
+                      <th scope="col">Flat Model</th>
+                      <th scope="col">Lease Commence</th>
+                      <th scope="col">Remaining Lease</th>
+                      <th scope="col">Resale Price ($)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="datagov-table-body">
+                    <!-- Populated dynamically via app.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- TAB 2: Formatted Raw JSON Response -->
+            <div id="resp-view-json" class="resp-view-panel hidden">
+              <div class="json-viewer-box">
+                <pre><code id="json-response-code" class="json-code-block">// Loading Data.gov.sg API response...</code></pre>
+              </div>
+            </div>
+
+            <!-- TAB 3: Dataset Fields Metadata Schema -->
+            <div id="resp-view-schema" class="resp-view-panel hidden">
+              <div class="schema-overview-card">
+                <div class="schema-title-row">
+                  <h5 class="schema-title">Dataset: HDB Resale Prices (Jan 2017 Onwards)</h5>
+                  <span class="schema-source-tag">api-production.data.gov.sg</span>
+                </div>
+                <p class="schema-desc">This dataset contains registered resale applications submitted to HDB. Official field schema definitions from Government Technology Agency of Singapore (GovTech):</p>
+                <div class="table-scroll-container">
+                  <table class="datagov-table schema-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Field Name</th>
+                        <th scope="col">Data Type</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Example Value</th>
+                      </tr>
+                    </thead>
+                    <tbody id="datagov-schema-body">
+                      <tr>
+                        <td><code>_id</code></td>
+                        <td><span class="type-badge">int4</span></td>
+                        <td>Internal system record unique identifier</td>
+                        <td>1, 2, 3...</td>
+                      </tr>
+                      <tr>
+                        <td><code>month</code></td>
+                        <td><span class="type-badge">text (YYYY-MM)</span></td>
+                        <td>Transaction registration month</td>
+                        <td>"2017-01", "2026-05"</td>
+                      </tr>
+                      <tr>
+                        <td><code>town</code></td>
+                        <td><span class="type-badge">text</span></td>
+                        <td>HDB Planning Town Estate</td>
+                        <td>"TAMPINES", "PUNGGOL"</td>
+                      </tr>
+                      <tr>
+                        <td><code>flat_type</code></td>
+                        <td><span class="type-badge">text</span></td>
+                        <td>Flat room classification</td>
+                        <td>"4 ROOM", "5 ROOM"</td>
+                      </tr>
+                      <tr>
+                        <td><code>block</code></td>
+                        <td><span class="type-badge">text</span></td>
+                        <td>HDB Building Block number</td>
+                        <td>"857B", "271C"</td>
+                      </tr>
+                      <tr>
+                        <td><code>street_name</code></td>
+                        <td><span class="type-badge">text</span></td>
+                        <td>Registered road / street name</td>
+                        <td>"TAMPINES ST 83"</td>
+                      </tr>
+                      <tr>
+                        <td><code>storey_range</code></td>
+                        <td><span class="type-badge">text</span></td>
+                        <td>Storey elevation bracket</td>
+                        <td>"07 TO 09", "10 TO 12"</td>
+                      </tr>
+                      <tr>
+                        <td><code>floor_area_sqm</code></td>
+                        <td><span class="type-badge">numeric</span></td>
+                        <td>Internal floor area in square meters</td>
+                        <td>104, 93, 68</td>
+                      </tr>
+                      <tr>
+                        <td><code>flat_model</code></td>
+                        <td><span class="type-badge">text</span></td>
+                        <td>Architectural layout model</td>
+                        <td>"Model A", "Improved", "New Generation"</td>
+                      </tr>
+                      <tr>
+                        <td><code>lease_commence_date</code></td>
+                        <td><span class="type-badge">numeric (year)</span></td>
+                        <td>Year 99-year lease began</td>
+                        <td>1988, 2017</td>
+                      </tr>
+                      <tr>
+                        <td><code>remaining_lease</code></td>
+                        <td><span class="type-badge">text</span></td>
+                        <td>Years and months left on state lease</td>
+                        <td>"61 years 04 months"</td>
+                      </tr>
+                      <tr>
+                        <td><code>resale_price</code></td>
+                        <td><span class="type-badge">numeric ($)</span></td>
+                        <td>Transacted resale price in Singapore Dollars</td>
+                        <td>540000, 645000</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </article>
+      </div>
+
+      <!-- VIEW 8: Open-Meteo Real-Time Weather & Solar Climate Forecast Explorer -->
+      <div id="view-weather-panel" role="tabpanel" aria-labelledby="tab-weather" class="tab-panel hidden">
+        <article class="panel-card weather-view-card" aria-labelledby="weather-main-title">
+          
+          <!-- Open-Meteo Header Bar -->
+          <div class="weather-header-bar">
+            <div class="weather-header-info">
+              <div class="weather-status-pill">
+                <span class="weather-status-dot" aria-hidden="true"></span>
+                <span>Open-Meteo Real-Time Weather API &bull; Endpoint: <strong>api.open-meteo.com/v1/forecast</strong></span>
+              </div>
+              <h3 id="weather-main-title" class="weather-title">🌤️ Open-Meteo Real-Time Weather &amp; Solar Climate Forecast</h3>
+              <p class="weather-subtitle">Live atmospheric data integration via Open-Meteo API for real-time temperature, wind speed, relative humidity, and solar thermal comfort analysis across Singapore estates and global coordinates.</p>
+            </div>
+            <div class="weather-header-actions">
+              <button type="button" id="btn-refresh-weather" class="btn-weather-refresh" title="Refresh live weather forecast">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+                <span>Fetch Live Forecast</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Location Presets Bar -->
+          <div class="weather-presets-card">
+            <div class="presets-label-row">
+              <span class="presets-label">&#9889; Location Presets:</span>
+              <span class="presets-hint">Click any preset to load instant live forecast from Open-Meteo</span>
+            </div>
+            <div class="weather-presets-group" role="group" aria-label="Open-Meteo Location Presets">
+              <button type="button" class="btn-weather-preset active" id="btn-preset-berlin" data-lat="52.52" data-lon="13.41" data-name="Berlin, Germany (Requested API)">
+                <span class="preset-icon">📍</span>
+                <span class="preset-name">Berlin (52.52° N, 13.41° E)</span>
+                <span class="preset-badge">Requested Endpoint</span>
+              </button>
+
+              <button type="button" class="btn-weather-preset" id="btn-preset-sg-central" data-lat="1.3521" data-lon="103.8198" data-name="Singapore Central (Bishan / Toa Payoh)">
+                <span class="preset-icon">🇸🇬</span>
+                <span class="preset-name">Singapore Central (1.35° N, 103.82° E)</span>
+                <span class="preset-badge">HDB Base</span>
+              </button>
+
+              <button type="button" class="btn-weather-preset" id="btn-preset-sg-punggol" data-lat="1.4053" data-lon="103.9024" data-name="Punggol Waterfront (Singapore)">
+                <span class="preset-icon">🌊</span>
+                <span class="preset-name">Punggol Waterfront (1.41° N, 103.90° E)</span>
+                <span class="preset-badge">Coastal Breeze</span>
+              </button>
+
+              <button type="button" class="btn-weather-preset" id="btn-preset-sg-jurong" data-lat="1.3404" data-lon="103.7090" data-name="Jurong West / Lakeside (Singapore)">
+                <span class="preset-icon">🏙️</span>
+                <span class="preset-name">Jurong West (1.34° N, 103.71° E)</span>
+                <span class="preset-badge">West Sector</span>
+              </button>
+
+              <button type="button" class="btn-weather-preset" id="btn-preset-sg-tampines" data-lat="1.3547" data-lon="103.9437" data-name="Tampines East (Singapore)">
+                <span class="preset-icon">🌳</span>
+                <span class="preset-name">Tampines East (1.35° N, 103.94° E)</span>
+                <span class="preset-badge">East Hub</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Coordinates Input Bar -->
+          <div class="weather-coords-card">
+            <div class="coords-header">
+              <span class="coords-title">🎯 Coordinate Customization &amp; Variables:</span>
+              <span id="weather-active-location-name" class="active-location-badge">Berlin, Germany (52.52° N, 13.41° E)</span>
+            </div>
+            <form id="weather-custom-form" class="weather-coords-form">
+              <div class="coord-input-group">
+                <label for="weather-input-lat" class="coord-label">Latitude:</label>
+                <input type="number" step="0.0001" id="weather-input-lat" class="coord-input" value="52.52" required>
+              </div>
+              <div class="coord-input-group">
+                <label for="weather-input-lon" class="coord-label">Longitude:</label>
+                <input type="number" step="0.0001" id="weather-input-lon" class="coord-input" value="13.41" required>
+              </div>
+              <div class="coord-input-group">
+                <label class="coord-label">API Variables:</label>
+                <span class="coord-vars-tag">current: temp, wind | hourly: temp, humidity, wind</span>
+              </div>
+              <button type="submit" class="btn-coord-apply">
+                <span>Update Coordinates</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Live Weather Metrics Cards (Current) -->
+          <div class="weather-metrics-grid" aria-live="polite">
+            
+            <!-- Card 1: Temperature -->
+            <div class="weather-metric-card temp-card">
+              <div class="metric-top">
+                <span class="metric-icon">🌡️</span>
+                <span class="metric-badge">2m Height</span>
+              </div>
+              <span class="metric-label">Current Temperature</span>
+              <div class="metric-value-row">
+                <span id="weather-cur-temp" class="metric-number">--</span>
+                <span class="metric-unit">°C</span>
+              </div>
+              <p id="weather-temp-desc" class="metric-subtext">Loading current reading...</p>
+            </div>
+
+            <!-- Card 2: Wind Speed at 10m -->
+            <div class="weather-metric-card wind-card">
+              <div class="metric-top">
+                <span class="metric-icon">💨</span>
+                <span class="metric-badge">10m Elevation</span>
+              </div>
+              <span class="metric-label">Wind Speed</span>
+              <div class="metric-value-row">
+                <span id="weather-cur-wind" class="metric-number">--</span>
+                <span class="metric-unit">km/h</span>
+              </div>
+              <p id="weather-wind-desc" class="metric-subtext">Beaufort scale &amp; natural ventilation</p>
+            </div>
+
+            <!-- Card 3: Relative Humidity -->
+            <div class="weather-metric-card humidity-card">
+              <div class="metric-top">
+                <span class="metric-icon">💧</span>
+                <span class="metric-badge">Hourly Match</span>
+              </div>
+              <span class="metric-label">Relative Humidity</span>
+              <div class="metric-value-row">
+                <span id="weather-cur-humidity" class="metric-number">--</span>
+                <span class="metric-unit">%</span>
+              </div>
+              <p id="weather-humidity-desc" class="metric-subtext">Moisture &amp; thermal comfort level</p>
+            </div>
+
+            <!-- Card 4: Thermal Comfort & Heat Index -->
+            <div class="weather-metric-card comfort-card">
+              <div class="metric-top">
+                <span class="metric-icon">☀️</span>
+                <span class="metric-badge">Solar Thermal Index</span>
+              </div>
+              <span class="metric-label">Apparent Thermal Feel</span>
+              <div class="metric-value-row">
+                <span id="weather-heat-index" class="metric-number">--</span>
+                <span class="metric-unit">°C</span>
+              </div>
+              <p id="weather-comfort-verdict" class="metric-subtext">Calculated apparent heat load</p>
+            </div>
+          </div>
+
+          <!-- Hourly Forecast Visualization (24-Hour Interactive Timeline) -->
+          <div class="weather-forecast-section">
+            <div class="forecast-section-header">
+              <div>
+                <h4 class="forecast-title">📊 24-Hour Hourly Forecast Matrix</h4>
+                <p class="forecast-subtitle">Live hourly temperature profile, wind velocity fluctuations, and atmospheric humidity curve from Open-Meteo.</p>
+              </div>
+              <div class="forecast-legend">
+                <span class="legend-item legend-temp"><span class="dot"></span> Temperature (°C)</span>
+                <span class="legend-item legend-humidity"><span class="dot"></span> Humidity (%)</span>
+                <span class="legend-item legend-wind"><span class="dot"></span> Wind (km/h)</span>
+              </div>
+            </div>
+
+            <!-- Hourly Interactive Scroller -->
+            <div class="hourly-cards-scroll" id="hourly-cards-container" aria-label="Hourly weather cards">
+              <!-- Dynamically populated by app.js -->
+            </div>
+          </div>
+
+          <!-- Solar Ray & Environmental Ventilation Insight for Homebuyers -->
+          <div class="weather-solar-insight-card">
+            <div class="solar-insight-header">
+              <span class="insight-icon">🏡</span>
+              <div>
+                <h4 class="insight-heading">Solar Ray &amp; Wind Ventilation Impact on HDB Flats</h4>
+                <p class="insight-subheading">How Open-Meteo atmospheric metrics directly correlate with your housing choices</p>
+              </div>
+            </div>
+            <div class="insight-grid">
+              <div class="insight-col">
+                <strong>🌬️ Wind Speed at 10m (~3rd to 4th Floor Level):</strong>
+                <p id="insight-wind-text">Wind speed measured at 10 meters indicates natural cross-ventilation potential. Units on mid-to-high floors (6th floor and above) typically experience 20–40% higher airflow, enabling effective passive cooling without relying solely on air conditioning.</p>
+              </div>
+              <div class="insight-col">
+                <strong>☀️ Temperature &amp; Solar Azimuth Heating:</strong>
+                <p id="insight-solar-text">During peak ambient temperatures (1:00 PM – 4:30 PM), West and North-West facing facades absorb significant solar thermal energy. Units with North-South orientations stay cooler because the sun does not strike living room window glass directly.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live API URL & Code Snippets Generator -->
+          <div class="weather-api-tools-card">
+            <div class="api-tools-header">
+              <span class="tools-title">&#128295; Open-Meteo Endpoint &amp; Code Generator:</span>
+              <div class="code-copy-group">
+                <button type="button" id="btn-copy-weather-url" class="btn-code-action" title="Copy endpoint URL">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>Copy URL</span>
+                </button>
+                <button type="button" id="btn-copy-weather-curl" class="btn-code-action" title="Copy cURL command">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M4 17l6-6-6-6M12 19h8"></path>
+                  </svg>
+                  <span>Copy cURL</span>
+                </button>
+                <button type="button" id="btn-copy-weather-fetch" class="btn-code-action" title="Copy JavaScript Fetch code">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                  </svg>
+                  <span>Copy Fetch()</span>
+                </button>
+                <a id="link-direct-weather" href="https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m" target="_blank" rel="noopener noreferrer" class="btn-code-action external-link" title="Open directly on Open-Meteo">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                  <span>Open API Raw</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Active Endpoint Display -->
+            <div class="endpoint-code-block">
+              <code id="weather-endpoint-display">https://api.open-meteo.com/v1/forecast?latitude=52.52&amp;longitude=13.41&amp;current=temperature_2m,wind_speed_10m&amp;hourly=temperature_2m,relative_humidity_2m,wind_speed_10m</code>
+            </div>
+
+            <!-- Collapsible Raw JSON Response Viewer -->
+            <details class="json-details-wrapper" id="weather-json-details">
+              <summary class="json-summary-btn">
+                <span>View Raw Open-Meteo JSON Response Payload (<span id="weather-response-size">0 KB</span>)</span>
+                <span class="json-expand-arrow">&#9662;</span>
+              </summary>
+              <pre id="weather-json-pre" class="json-pre-block"><code>// Loading Open-Meteo API response...</code></pre>
+            </details>
+          </div>
+
+        </article>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- SUNLIGHT RAY SIMULATOR MODAL / INSPECTOR (WCAG 2.1 AA Compliant Dialog) -->
+  <dialog id="sunlight-modal" class="sunlight-modal" aria-labelledby="modal-unit-title" aria-modal="true">
+    <div class="modal-surface">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="banner-badge">Interactive Solar Raycaster</div>
+          <h3 id="modal-unit-title" class="modal-title">Block 271C Punggol Walk #11-04</h3>
+          <p id="modal-unit-subtitle" class="modal-subtitle">4 ROOM &bull; 93 sqm &bull; 90 Years Lease Remaining</p>
+        </div>
+        <button type="button" id="btn-close-modal" class="btn-icon-close" aria-label="Close Sunlight Ray Simulator dialog">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body: Interactive Solar Compass & Ray Diagram -->
+      <div class="modal-body-grid">
+        
+        <!-- Left: Solar Ray Compass Canvas Simulation -->
+        <div class="ray-visualizer-container">
+          <div class="ray-canvas-header">
+            <span class="ray-canvas-title">Solar Ray Angle &amp; Facade Ingress</span>
+            <span class="time-badge" id="current-sim-time-badge">8:30 AM (Morning Sun)</span>
+          </div>
+
+          <div class="canvas-wrapper">
+            <canvas id="sun-ray-canvas" width="460" height="400" role="img" aria-label="Interactive sunlight ray simulation diagram showing unit orientation and sun ray vectors"></canvas>
+          </div>
+
+          <!-- Time of Day Interactive Slider -->
+          <div class="time-slider-section">
+            <div class="time-slider-header">
+              <label for="time-of-day-slider" class="time-label">Time of Day (Sun Angle Simulation):</label>
+              <span id="time-slider-display" class="time-val-highlight">08:30 AM</span>
+            </div>
+            <input type="range" id="time-of-day-slider" min="7" max="18" step="0.5" value="8.5" class="custom-range" aria-valuemin="7" aria-valuemax="18" aria-valuenow="8.5">
+            <div class="time-preset-buttons" role="group" aria-label="Time of Day presets">
+              <button type="button" class="btn-time-preset" data-time="8.5">8:30 AM (Morning)</button>
+              <button type="button" class="btn-time-preset" data-time="12.0">12:00 PM (Noon)</button>
+              <button type="button" class="btn-time-preset" data-time="15.5">3:30 PM (Afternoon)</button>
+              <button type="button" class="btn-time-preset" data-time="17.5">5:30 PM (Sunset)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Unit Sunlight Analysis Card -->
+        <div class="ray-details-card">
+          <h4 class="details-heading">Sunlight &amp; Thermal Comfort Report</h4>
+          
+          <div class="comfort-score-row">
+            <div class="score-circle" id="modal-score-circle">
+              <span id="modal-score-num">95</span>
+              <span class="score-label">/100</span>
+            </div>
+            <div class="score-text">
+              <h5 id="modal-comfort-label">High Thermal Comfort</h5>
+              <p id="modal-comfort-desc">Unit benefits from prevailing North-South cross breeze with minimal direct afternoon thermal load.</p>
+            </div>
+          </div>
+
+          <div class="factors-list">
+            <div class="factor-item">
+              <span class="factor-icon" aria-hidden="true">&#9758;</span>
+              <div class="factor-info">
+                <strong>Living Room Facing:</strong>
+                <span id="modal-lr-facing">North (0&deg; Azimuth)</span>
+              </div>
+            </div>
+
+            <div class="factor-item">
+              <span class="factor-icon" aria-hidden="true">&#127749;</span>
+              <div class="factor-info">
+                <strong>Morning Sun Exposure:</strong>
+                <span id="modal-morning-sun">Gentle Morning Light (2h)</span>
+              </div>
+            </div>
+
+            <div class="factor-item">
+              <span class="factor-icon" aria-hidden="true">&#9888;</span>
+              <div class="factor-info">
+                <strong>Afternoon Sun / West Heat:</strong>
+                <span id="modal-afternoon-sun">No Direct West Sun</span>
+              </div>
+            </div>
+
+            <div class="factor-item">
+              <span class="factor-icon" aria-hidden="true">&#127788;</span>
+              <div class="factor-info">
+                <strong>Cross-Ventilation Breeze:</strong>
+                <span id="modal-ventilation">Optimal North-South Wind Tunnel</span>
+              </div>
+            </div>
+
+            <div class="factor-item factor-weather-live">
+              <span class="factor-icon" aria-hidden="true">🌤️</span>
+              <div class="factor-info">
+                <strong>Open-Meteo Live Atmospheric Reading:</strong>
+                <span id="modal-live-weather">Loading live estate temperature &amp; wind...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Homebuyer Solar Decision Tip -->
+          <div class="buyer-tip-box">
+            <strong>Homebuyer Solar Verdict:</strong>
+            <p id="modal-buyer-tip">
+              Excellent layout for living room relaxation and home office use. You will enjoy bright natural ambient daylight without needing heavy blackout curtains or high daytime air-con bills.
+            </p>
+          </div>
+
+          <!-- Quick Disqus Discussion Trigger for this Unit -->
+          <div class="modal-disqus-action-row">
+            <button type="button" id="btn-modal-discuss-disqus" class="btn-discuss-disqus">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>💬 Discuss Unit &amp; Reviews on Disqus</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Floating Quick-Launch AI Advisor Action Button -->
+  <button type="button" id="btn-floating-ai" class="btn-floating-ai" aria-label="Open Gemini Property Advisor Chat">
+    <span class="floating-ai-pulse" aria-hidden="true"></span>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+    </svg>
+    <span>Ask Gemini Advisor</span>
+  </button>
+
+  <!-- Application Footer -->
+  <footer class="app-footer" role="contentinfo">
+    <div class="footer-container">
+      <p class="footer-copy">DreamWithinReach &bull; Sunlight Ray &amp; Singapore HDB Resale Flat Explorer</p>
+      <p class="footer-subtext">Data compliant with HDB Resale transaction formats &amp; Solar Azimuth calculations for Singapore (1.35&deg; N, 103.82&deg; E).</p>
+    </div>
+  </footer>
+
+  <!-- Application Logic (Vanilla JavaScript) -->
+  <script src="app.js" defer></script>
+  <!-- Disqus Universal Comment Count Script -->
+  <script id="dsq-count-scr" src="//dreamwithinreach.disqus.com/count.js" async></script>
+</body>
+</html>
