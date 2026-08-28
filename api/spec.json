@@ -1,0 +1,63 @@
+{
+  "name": "HDB Explorer API",
+  "description": "Fetches HDB flats based on budget, property size, and area.",
+  "base_url": "https://dream-within-reach.vercel.app/api",
+  "endpoints": [
+    {
+      "path": "/search",
+      "method": "GET",
+      "parameters": [
+        {
+          "name": "budget",
+          "in": "query",
+          "required": true,
+          "type": "number",
+          "description": "Maximum budget for the flat"
+        },
+        {
+          "name": "size",
+          "in": "query",
+          "required": true,
+          "type": "number",
+          "description": "Floor area in square meters"
+        },
+        {
+          "name": "area",
+          "in": "query",
+          "required": true,
+          "type": "string",
+          "description": "Town or region of the flat"
+        }
+      ],
+      "response": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "town": { "type": "string" },
+                "flat_type": { "type": "string" },
+                "floor_area_sqm": { "type": "number" },
+                "remaining_lease": { "type": "string" },
+                "price": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "parameters": [],
+      "response": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" }
+        }
+      }
+    }
+  ]
+}

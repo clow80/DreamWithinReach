@@ -1156,15 +1156,28 @@ export default async function searchHandler(req, res) {
   const params = req.method === "POST" ? (req.body || {}) : (req.query || {});
 
   // 1. Server-side Input Validation & Sanitization
+  // Support both spec parameters ("budget", "size", "area") and granular parameters ("budgetMin", "budgetMax", "sizeMin", "sizeMax", "town")
+  let budgetMax = Number(params.budgetMax) > 0 ? Number(params.budgetMax) : 2000000;
+  if (params.budget !== undefined && Number(params.budget) > 0) {
+    budgetMax = Number(params.budget);
+  }
   const budgetMin = Number(params.budgetMin) >= 0 ? Number(params.budgetMin) : 0;
-  const budgetMax = Number(params.budgetMax) > 0 ? Number(params.budgetMax) : 2000000;
   
-  const sizeMin = Number(params.sizeMin) >= 0 ? Number(params.sizeMin) : 0;
-  const sizeMax = Number(params.sizeMax) > 0 ? Number(params.sizeMax) : 300;
+  let sizeMin = Number(params.sizeMin) >= 0 ? Number(params.sizeMin) : 0;
+  let sizeMax = Number(params.sizeMax) > 0 ? Number(params.sizeMax) : 300;
+  if (params.size !== undefined && Number(params.size) > 0) {
+    sizeMin = Number(params.size);
+  }
 
   const leaseMin = Number(params.leaseMin) >= 0 ? Number(params.leaseMin) : 0;
 
-  const rawTown = typeof params.town === "string" ? params.town.trim().toUpperCase() : "ALL";
+  let rawTown = "ALL";
+  if (typeof params.area === "string" && params.area.trim()) {
+    rawTown = params.area.trim().toUpperCase();
+  } else if (typeof params.town === "string" && params.town.trim()) {
+    rawTown = params.town.trim().toUpperCase();
+  }
+
   const rawFlatType = typeof params.flatType === "string" ? params.flatType.trim().toUpperCase() : "ALL";
   const sunlightPref = typeof params.sunlightPreference === "string" ? params.sunlightPreference.trim().toLowerCase() : "all";
   const sortBy = typeof params.sortBy === "string" ? params.sortBy.trim() : "price_asc";
@@ -1188,8 +1201,13 @@ export default async function searchHandler(req, res) {
     // Remaining lease filter
     if (item.remaining_lease_years < leaseMin) return false;
 
-    // Town filter
-    if (rawTown !== "ALL" && item.town !== rawTown) return false;
+    // Town / Area filter
+    if (rawTown !== "ALL") {
+      const itemTown = item.town.toUpperCase();
+      if (itemTown !== rawTown && !itemTown.includes(rawTown) && !rawTown.includes(itemTown)) {
+        return false;
+      }
+    }
 
     // Flat type filter
     if (rawFlatType !== "ALL" && item.flat_type !== rawFlatType) return false;
@@ -1210,6 +1228,19 @@ export default async function searchHandler(req, res) {
     }
 
     return true;
+  });
+
+  // Format results with exact properties: town, flat_type, floor_area_sqm, remaining_lease, price
+  const formattedResults = results.map(item => {
+    const remainingLeaseStr = `${item.remaining_lease_years} years${item.remaining_lease_months ? ` ${item.remaining_lease_months} months` : ""}`;
+    return {
+      ...item,
+      town: item.town,
+      flat_type: item.flat_type,
+      floor_area_sqm: item.floor_area_sqm,
+      remaining_lease: remainingLeaseStr,
+      price: item.resale_price
+    };
   });
 
   // 3. Sorting results
@@ -1363,7 +1394,7 @@ export default async function searchHandler(req, res) {
       averageRemainingLease: avgLease,
       averageSunlightScore: avgSunlightScore
     },
-    results,
+    results: formattedResults,
     analytics: {
       priceTrendsByMonth,
       distributionByTown,

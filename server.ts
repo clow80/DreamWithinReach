@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import searchHandler from "./api/search.js";
 import chatHandler from "./api/chat.js";
 import { handleResaleSearch, handleDatasetMetadata } from "./api/datagov.js";
+import { API_SPEC } from "./api/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,31 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Enable CORS for API routes
+app.use("/api", (req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// API Schema / OpenAPI Definition Route
+app.get("/api", (req, res) => {
+  res.status(200).json(API_SPEC);
+});
+
+app.get("/api/spec", (req, res) => {
+  res.status(200).json(API_SPEC);
+});
+
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
 // Serverless API route matching Vercel /api/search.js handler format
 app.get("/api/search", async (req, res) => {
