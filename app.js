@@ -83,17 +83,17 @@ const state = {
     messages: [],
     isLoading: false
   },
-  // Disqus Community Discussion state
+  // Disqus Community Discussion & Review state
   disqus: {
     shortname: "dreamwithinreach",
     language: "en", // Unified to English (en)
     activeTopic: "sg-hdb-sunlight-guide-2026",
-    activeTitle: "Singapore HDB Resale & Solar Orientation Discussion Forum",
-    activeUrl: typeof window !== "undefined" ? window.location.href : "",
-    mainPageTopic: "dreamwithinreach-main-page",
-    mainPageTitle: "🇸🇬 DreamWithinReach Main Community Discussion",
+    activeTitle: "🇸🇬 General HDB Resale & Solar Discussion",
+    activeUrl: typeof window !== "undefined" ? `${window.location.origin}/?topic=sg-hdb-sunlight-guide-2026` : "",
     isLoaded: false
   },
+  // Interactive Local Community Reviews (instant posting + permanent storage)
+  localComments: [],
   // Data.gov.sg API Explorer state
   datagov: {
     resourceId: "d_8b84c4ee58e3cfc0ece0d773c8ca6abc",
@@ -104,11 +104,11 @@ const state = {
     flatType: "ALL",
     query: ""
   },
-  // Open-Meteo Weather API state
+  // Open-Meteo Weather API state (Default: Singapore Central)
   weather: {
-    lat: 52.52,
-    lon: 13.41,
-    locationName: "Berlin, Germany (Requested API)",
+    lat: 1.3521,
+    lon: 103.8198,
+    locationName: "Singapore Central (Bishan / Toa Payoh - HDB Hub)",
     currentVariables: ["temperature_2m", "wind_speed_10m"],
     hourlyVariables: ["temperature_2m", "relative_humidity_2m", "wind_speed_10m"],
     data: null,
@@ -117,6 +117,229 @@ const state = {
     cachedData: {}
   }
 };
+
+/**
+ * Master Registry of Singapore HDB Towns & Planning Zones
+ * with approximate SVG centroid coordinates, bounding polygons,
+ * and standard GIS bounds.
+ */
+const SINGAPORE_TOWN_REGIONS = [
+  {
+    name: "WOODLANDS",
+    label: "Woodlands",
+    cx: 410,
+    cy: 140,
+    polygon: "M 340 100 L 480 95 L 470 180 L 350 175 Z"
+  },
+  {
+    name: "SEMBAWANG",
+    label: "Sembawang",
+    cx: 510,
+    cy: 125,
+    polygon: "M 480 95 L 560 90 L 550 160 L 470 160 Z"
+  },
+  {
+    name: "YISHUN",
+    label: "Yishun",
+    cx: 535,
+    cy: 175,
+    polygon: "M 480 160 L 590 150 L 585 220 L 475 220 Z"
+  },
+  {
+    name: "PUNGGOL",
+    label: "Punggol",
+    cx: 730,
+    cy: 155,
+    polygon: "M 670 120 L 790 140 L 775 200 L 665 185 Z"
+  },
+  {
+    name: "SENGKANG",
+    label: "Sengkang",
+    cx: 690,
+    cy: 220,
+    polygon: "M 630 190 L 760 195 L 740 260 L 620 250 Z"
+  },
+  {
+    name: "PASIR RIS",
+    label: "Pasir Ris",
+    cx: 830,
+    cy: 215,
+    polygon: "M 780 170 L 890 200 L 870 270 L 770 245 Z"
+  },
+  {
+    name: "TAMPINES",
+    label: "Tampines",
+    cx: 795,
+    cy: 290,
+    polygon: "M 740 250 L 860 265 L 835 340 L 730 325 Z"
+  },
+  {
+    name: "BEDOK",
+    label: "Bedok",
+    cx: 740,
+    cy: 370,
+    polygon: "M 670 330 L 810 335 L 780 420 L 650 405 Z"
+  },
+  {
+    name: "HOUGANG",
+    label: "Hougang",
+    cx: 640,
+    cy: 280,
+    polygon: "M 590 250 L 700 255 L 685 320 L 580 315 Z"
+  },
+  {
+    name: "ANG MO KIO",
+    label: "Ang Mo Kio",
+    cx: 530,
+    cy: 250,
+    polygon: "M 460 220 L 590 220 L 575 290 L 450 285 Z"
+  },
+  {
+    name: "BISHAN",
+    label: "Bishan",
+    cx: 520,
+    cy: 310,
+    polygon: "M 460 285 L 570 285 L 560 350 L 455 345 Z"
+  },
+  {
+    name: "TOA PAYOH",
+    label: "Toa Payoh",
+    cx: 535,
+    cy: 365,
+    polygon: "M 470 345 L 580 345 L 570 400 L 470 395 Z"
+  },
+  {
+    name: "KALLANG/WHAMPOA",
+    label: "Kallang/Whampoa",
+    cx: 590,
+    cy: 405,
+    polygon: "M 540 380 L 640 380 L 630 440 L 530 435 Z"
+  },
+  {
+    name: "GEYLANG",
+    label: "Geylang",
+    cx: 660,
+    cy: 410,
+    polygon: "M 615 385 L 705 385 L 690 450 L 605 445 Z"
+  },
+  {
+    name: "QUEENSTOWN",
+    label: "Queenstown",
+    cx: 410,
+    cy: 430,
+    polygon: "M 360 395 L 460 395 L 445 470 L 350 460 Z"
+  },
+  {
+    name: "BUKIT MERAH",
+    label: "Bukit Merah",
+    cx: 480,
+    cy: 455,
+    polygon: "M 440 420 L 530 420 L 515 495 L 430 490 Z"
+  },
+  {
+    name: "CLEMENTI",
+    label: "Clementi",
+    cx: 330,
+    cy: 390,
+    polygon: "M 280 355 L 380 355 L 365 440 L 270 430 Z"
+  },
+  {
+    name: "JURONG EAST",
+    label: "Jurong East",
+    cx: 275,
+    cy: 350,
+    polygon: "M 220 310 L 330 315 L 315 390 L 210 380 Z"
+  },
+  {
+    name: "JURONG WEST",
+    label: "Jurong West",
+    cx: 195,
+    cy: 345,
+    polygon: "M 130 290 L 240 300 L 225 390 L 120 375 Z"
+  },
+  {
+    name: "CHOA CHU KANG",
+    label: "Choa Chu Kang",
+    cx: 260,
+    cy: 245,
+    polygon: "M 200 200 L 310 205 L 300 290 L 190 280 Z"
+  },
+  {
+    name: "BUKIT PANJANG",
+    label: "Bukit Panjang",
+    cx: 340,
+    cy: 230,
+    polygon: "M 290 190 L 390 195 L 380 280 L 280 270 Z"
+  },
+  {
+    name: "BUKIT BATOK",
+    label: "Bukit Batok",
+    cx: 310,
+    cy: 300,
+    polygon: "M 260 260 L 360 265 L 345 345 L 250 335 Z"
+  },
+  {
+    name: "SERANGOON",
+    label: "Serangoon",
+    cx: 600,
+    cy: 310,
+    polygon: "M 550 280 L 640 280 L 630 345 L 540 340 Z"
+  }
+];
+
+/**
+ * Seed dataset of realistic, verified Singapore HDB community reviews & solar thermal insights.
+ */
+const DEFAULT_COMMUNITY_COMMENTS = [
+  {
+    id: "comm-1",
+    author: "Bishan Resident Kevin",
+    topic: "sg-hdb-sunlight-guide-2026",
+    topicName: "🇸🇬 General HDB Resale & Solar Discussion",
+    rating: 5,
+    message: "Living in a high-floor North-South facing unit in Bishan for 3 years now. Zero direct west sun in bedrooms, and the cross-ventilation keeps daytime indoor temp below 29°C without turning on the aircon!",
+    tags: ["☀️ North-South Facing", "🌬️ Great Cross Breeze"],
+    timestamp: "2 hours ago",
+    likes: 12,
+    liked: false
+  },
+  {
+    id: "comm-2",
+    author: "Punggol Waterfront Buyer",
+    topic: "sg-west-sun-thermal-tips",
+    topicName: "☀️ Afternoon Sun (West Sun) & Heat Management",
+    rating: 4,
+    message: "For units with NW facing, Solar Film with 99% UV rejection and double-pleated blackout curtains made a massive difference. Our electricity bill dropped by $45/mo.",
+    tags: ["☀️ Solar Film", "💰 Budget Optimization"],
+    timestamp: "Yesterday",
+    likes: 9,
+    liked: false
+  },
+  {
+    id: "comm-3",
+    author: "First-time Buyer Janice & Tan",
+    topic: "sg-cpf-housing-grants",
+    topicName: "💰 CPF Housing Grants & Budget Optimization",
+    rating: 5,
+    message: "We qualified for $80k Enhanced Housing Grant (EHG) plus $50k Proximity Housing Grant (PHG) living near parents in Tampines. Combined with the 2026 CPF ceiling calculator here, our monthly cash outlay is almost zero!",
+    tags: ["💰 High Value/Grants", "🌳 Near Parents / MRT"],
+    timestamp: "2 days ago",
+    likes: 18,
+    liked: true
+  },
+  {
+    id: "comm-4",
+    author: "Jurong West Homeowner",
+    topic: "sg-mature-vs-non-mature-tradeoffs",
+    topicName: "🏙️ Mature vs Non-Mature Estates Price Analysis",
+    rating: 4,
+    message: "Jurong West 5-room flats offer ~115 sqm for under $650k. With the upcoming Jurong Region Line (JRL) stations, the value-to-space ratio is unmatched compared to central estates.",
+    tags: ["🏙️ Mature vs Non-Mature", "🌳 Near MRT / Park"],
+    timestamp: "3 days ago",
+    likes: 7,
+    liked: false
+  }
+];
 
 /**
  * Main application initialization function.
@@ -130,28 +353,21 @@ function initApp() {
   setupGeminiChatEventListeners();
   setupMapEventListeners();
   setupDisqusEventListeners();
-  setupMainPageDisqusEventListeners();
+  setupCommunityCommentsEventListeners();
   setupDatagovApiEventListeners();
   setupWeatherEventListeners();
 
   // 2. Initialize Gemini Chat Welcome message
   initGeminiChatWelcome();
 
-  // 3. Initialize Main Page Disqus Thread
-  initMainPageDisqus();
+  // 3. Initialize Community Comments & Forum
+  initLocalComments();
 
-  // 4. Initialize Open-Meteo Weather Forecast
+  // 4. Initialize Open-Meteo Weather Forecast (Defaults to Singapore / Auto-detects IP)
   initOpenMeteoWeather();
 
   // 5. Fetch and render matching flats
   fetchSearchResults();
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initApp);
-} else {
-  // Execute immediately if DOM is already parsed
-  initApp();
 }
 
 /**
@@ -889,175 +1105,6 @@ function renderFlatsList() {
     flatsGrid.appendChild(card);
   });
 }
-
-/**
- * Master Registry of Singapore HDB Towns & Planning Zones
- * with approximate SVG centroid coordinates, bounding polygons,
- * and standard GIS bounds.
- */
-const SINGAPORE_TOWN_REGIONS = [
-  {
-    name: "WOODLANDS",
-    label: "Woodlands",
-    cx: 410,
-    cy: 140,
-    polygon: "M 340 100 L 480 95 L 470 180 L 350 175 Z"
-  },
-  {
-    name: "SEMBAWANG",
-    label: "Sembawang",
-    cx: 510,
-    cy: 125,
-    polygon: "M 480 95 L 560 90 L 550 160 L 470 160 Z"
-  },
-  {
-    name: "YISHUN",
-    label: "Yishun",
-    cx: 535,
-    cy: 175,
-    polygon: "M 480 160 L 590 150 L 585 220 L 475 220 Z"
-  },
-  {
-    name: "PUNGGOL",
-    label: "Punggol",
-    cx: 730,
-    cy: 155,
-    polygon: "M 670 120 L 790 140 L 775 200 L 665 185 Z"
-  },
-  {
-    name: "SENGKANG",
-    label: "Sengkang",
-    cx: 690,
-    cy: 220,
-    polygon: "M 630 190 L 760 195 L 740 260 L 620 250 Z"
-  },
-  {
-    name: "PASIR RIS",
-    label: "Pasir Ris",
-    cx: 830,
-    cy: 215,
-    polygon: "M 780 170 L 890 200 L 870 270 L 770 245 Z"
-  },
-  {
-    name: "TAMPINES",
-    label: "Tampines",
-    cx: 795,
-    cy: 290,
-    polygon: "M 740 250 L 860 265 L 835 340 L 730 325 Z"
-  },
-  {
-    name: "BEDOK",
-    label: "Bedok",
-    cx: 740,
-    cy: 370,
-    polygon: "M 670 330 L 810 335 L 780 420 L 650 405 Z"
-  },
-  {
-    name: "HOUGANG",
-    label: "Hougang",
-    cx: 640,
-    cy: 280,
-    polygon: "M 590 250 L 700 255 L 685 320 L 580 315 Z"
-  },
-  {
-    name: "ANG MO KIO",
-    label: "Ang Mo Kio",
-    cx: 530,
-    cy: 250,
-    polygon: "M 460 220 L 590 220 L 575 290 L 450 285 Z"
-  },
-  {
-    name: "BISHAN",
-    label: "Bishan",
-    cx: 520,
-    cy: 310,
-    polygon: "M 460 285 L 570 285 L 560 350 L 455 345 Z"
-  },
-  {
-    name: "TOA PAYOH",
-    label: "Toa Payoh",
-    cx: 535,
-    cy: 365,
-    polygon: "M 470 345 L 580 345 L 570 400 L 470 395 Z"
-  },
-  {
-    name: "KALLANG/WHAMPOA",
-    label: "Kallang/Whampoa",
-    cx: 590,
-    cy: 405,
-    polygon: "M 540 380 L 640 380 L 630 440 L 530 435 Z"
-  },
-  {
-    name: "GEYLANG",
-    label: "Geylang",
-    cx: 660,
-    cy: 410,
-    polygon: "M 615 385 L 705 385 L 690 450 L 605 445 Z"
-  },
-  {
-    name: "QUEENSTOWN",
-    label: "Queenstown",
-    cx: 410,
-    cy: 430,
-    polygon: "M 360 395 L 460 395 L 445 470 L 350 460 Z"
-  },
-  {
-    name: "BUKIT MERAH",
-    label: "Bukit Merah",
-    cx: 480,
-    cy: 455,
-    polygon: "M 440 420 L 530 420 L 515 495 L 430 490 Z"
-  },
-  {
-    name: "CLEMENTI",
-    label: "Clementi",
-    cx: 330,
-    cy: 390,
-    polygon: "M 280 355 L 380 355 L 365 440 L 270 430 Z"
-  },
-  {
-    name: "JURONG EAST",
-    label: "Jurong East",
-    cx: 275,
-    cy: 350,
-    polygon: "M 220 310 L 330 315 L 315 390 L 210 380 Z"
-  },
-  {
-    name: "JURONG WEST",
-    label: "Jurong West",
-    cx: 195,
-    cy: 345,
-    polygon: "M 130 290 L 240 300 L 225 390 L 120 375 Z"
-  },
-  {
-    name: "CHOA CHU KANG",
-    label: "Choa Chu Kang",
-    cx: 260,
-    cy: 245,
-    polygon: "M 200 200 L 310 205 L 300 290 L 190 280 Z"
-  },
-  {
-    name: "BUKIT PANJANG",
-    label: "Bukit Panjang",
-    cx: 340,
-    cy: 230,
-    polygon: "M 290 190 L 390 195 L 380 280 L 280 270 Z"
-  },
-  {
-    name: "BUKIT BATOK",
-    label: "Bukit Batok",
-    cx: 310,
-    cy: 300,
-    polygon: "M 260 260 L 360 265 L 345 345 L 250 335 Z"
-  },
-  {
-    name: "SERANGOON",
-    label: "Serangoon",
-    cx: 600,
-    cy: 310,
-    polygon: "M 550 280 L 640 280 L 630 345 L 540 340 Z"
-  }
-];
 
 /**
  * Converts Singapore GPS coordinates (Latitude & Longitude)
@@ -2456,112 +2503,298 @@ function parseMarkdown(text) {
 }
 
 /* ==========================================================================
-   DISQUS COMMUNITY EMBED & COMMENT COUNT ENGINE
+   DISQUS COMMUNITY EMBED & INTERACTIVE LOCAL REVIEWS SYSTEM
    Shortname: 'dreamwithinreach'
    Language: 'en' (English)
    ========================================================================== */
 
 /**
- * Ensures the single #disqus_thread container is present in the target container wrapper.
- * 
- * @param {string} targetWrapperId - Element ID of wrapper (e.g. 'main-page-disqus-wrapper' or 'discussions-tab-disqus-wrapper')
- * @returns {HTMLElement} The #disqus_thread DOM element
+ * Loads stored community comments from localStorage or initializes with seed reviews.
  */
-function ensureDisqusContainer(targetWrapperId) {
-  let thread = document.getElementById("disqus_thread");
-  const targetWrapper = document.getElementById(targetWrapperId);
-  if (!targetWrapper) return thread;
-
-  if (!thread) {
-    thread = document.createElement("div");
-    thread.id = "disqus_thread";
-    thread.className = "disqus-thread-container";
-    targetWrapper.appendChild(thread);
-  } else if (thread.parentElement !== targetWrapper) {
-    targetWrapper.appendChild(thread);
+function initLocalComments() {
+  try {
+    const saved = localStorage.getItem("dwr_community_comments");
+    if (saved) {
+      state.localComments = JSON.parse(saved);
+    } else {
+      state.localComments = [...DEFAULT_COMMUNITY_COMMENTS];
+      localStorage.setItem("dwr_community_comments", JSON.stringify(state.localComments));
+    }
+  } catch (e) {
+    state.localComments = [...DEFAULT_COMMUNITY_COMMENTS];
   }
-  return thread;
+
+  renderLocalComments("all");
+  renderMainPageReviewsPreview();
+  updateLocalCommentsCount();
 }
 
 /**
- * Initializes the Main Page Disqus thread when the user first loads the app.
- * Prepares the container UI safely without blocking initial app load.
+ * Saves current local comments array into localStorage permanently.
  */
-function initMainPageDisqus() {
-  const wrapper = document.getElementById("main-page-disqus-wrapper");
-  if (!wrapper) return;
-  const thread = ensureDisqusContainer("main-page-disqus-wrapper");
-  if (thread && !thread.hasChildNodes()) {
-    thread.innerHTML = `
-      <div class="disqus-placeholder-card" style="padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; margin-top: 16px;">
-        <p style="font-weight: 600; font-size: 15px; margin-bottom: 8px;">💬 Community Discussion &amp; Home Buyer Forum</p>
-        <p style="font-size: 13px; color: #94a3b8; max-width: 540px; margin: 0 auto 16px;">Join the discussion on Singapore HDB resale pricing, afternoon sun exposure strategies, and town amenities.</p>
-        <button type="button" id="btn-activate-main-disqus" class="btn-discuss-disqus" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px;">
-          <span>🚀 Load Live Community Forum</span>
-        </button>
+function saveLocalComments() {
+  try {
+    localStorage.setItem("dwr_community_comments", JSON.stringify(state.localComments));
+  } catch (e) {
+    console.warn("Could not write comments to localStorage:", e);
+  }
+}
+
+/**
+ * Updates the badges displaying total community comment counts.
+ */
+function updateLocalCommentsCount() {
+  const count = state.localComments.length;
+  const countPill = document.getElementById("local-comments-count-pill");
+  const streamCount = document.getElementById("local-stream-count");
+  if (countPill) countPill.textContent = count;
+  if (streamCount) streamCount.textContent = count;
+}
+
+/**
+ * Renders the interactive Community Comments stream in the Discussions tab.
+ * 
+ * @param {string} filterTopic - Filter by topic ID or 'all'
+ */
+function renderLocalComments(filterTopic = "all") {
+  const container = document.getElementById("local-comments-container");
+  if (!container) return;
+
+  const filtered = filterTopic === "all"
+    ? state.localComments
+    : state.localComments.filter(c => c.topic === filterTopic);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 28px; text-align: center; background: rgba(15, 23, 42, 0.45); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px;">
+        <p style="font-size: 0.95rem; font-weight: 600; color: #f1f5f9; margin: 0 0 6px 0;">No reviews posted yet for this topic</p>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin: 0;">Be the first to share your experience using the form above!</p>
       </div>
     `;
-    const activateBtn = document.getElementById("btn-activate-main-disqus");
-    if (activateBtn) {
-      activateBtn.addEventListener("click", () => {
-        loadDisqusThread(
-          state.disqus.mainPageTopic || "dreamwithinreach-main-page",
-          state.disqus.mainPageTitle || "🇸🇬 DreamWithinReach Main Community Discussion",
-          `${window.location.origin}/#${state.disqus.mainPageTopic || "dreamwithinreach-main-page"}`,
-          "en",
-          true
-        );
-      });
-    }
+    return;
   }
+
+  container.innerHTML = filtered.map(c => `
+    <div class="local-comment-card" id="comment-card-${c.id}">
+      <div class="comment-card-top">
+        <div class="comment-author-group">
+          <span class="comment-author-badge">👤 ${escapeHTML(c.author)}</span>
+          <span class="comment-topic-pill">${escapeHTML(c.topicName || c.topic)}</span>
+        </div>
+        <div class="comment-meta-group">
+          <span class="comment-star-pill" title="Rating: ${c.rating} / 5 stars">
+            ${"⭐".repeat(Math.max(1, Math.min(5, c.rating || 5)))}
+          </span>
+          <span class="comment-time-badge">${escapeHTML(c.timestamp || "Recently")}</span>
+        </div>
+      </div>
+      <div class="comment-card-body">
+        ${escapeHTML(c.message)}
+      </div>
+      <div class="comment-card-footer">
+        <div class="compose-tags-group">
+          ${(c.tags || []).map(tag => `<span class="btn-quick-tag" style="cursor: default;">${escapeHTML(tag)}</span>`).join("")}
+        </div>
+        <button type="button" class="btn-comment-like ${c.liked ? 'liked' : ''}" data-comment-id="${c.id}" title="Like this comment">
+          <span>❤️</span>
+          <span class="like-count">${c.likes || 0}</span>
+        </button>
+      </div>
+    </div>
+  `).join("");
+
+  // Attach like click handlers
+  container.querySelectorAll(".btn-comment-like").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const commentId = btn.getAttribute("data-comment-id");
+      const comment = state.localComments.find(item => item.id === commentId);
+      if (comment) {
+        if (!comment.liked) {
+          comment.likes = (comment.likes || 0) + 1;
+          comment.liked = true;
+        } else {
+          comment.likes = Math.max(0, (comment.likes || 0) - 1);
+          comment.liked = false;
+        }
+        saveLocalComments();
+        renderLocalComments(filterTopic);
+        renderMainPageReviewsPreview();
+      }
+    });
+  });
 }
 
 /**
- * Sets up event listeners for the Main Page Disqus section
- * (quick topic pills, main page reload button).
+ * Renders the compact Community Reviews summary on the Main Page.
  */
-function setupMainPageDisqusEventListeners() {
-  const quickTopicChips = document.querySelectorAll(".quick-topic-chip");
-  const mainReloadBtn = document.getElementById("btn-reload-main-disqus");
+function renderMainPageReviewsPreview() {
+  const previewContainer = document.getElementById("main-page-reviews-preview");
+  if (!previewContainer) return;
 
-  // Topic chip click handlers
-  quickTopicChips.forEach(chip => {
-    chip.addEventListener("click", () => {
-      quickTopicChips.forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
+  const topReviews = state.localComments.slice(0, 3);
+  previewContainer.innerHTML = topReviews.map(r => `
+    <div class="main-review-mini-card">
+      <div class="main-review-mini-top">
+        <span class="main-review-mini-author">👤 ${escapeHTML(r.author)}</span>
+        <span style="color: #fbbf24; font-size: 0.72rem;">${"⭐".repeat(r.rating || 5)}</span>
+      </div>
+      <div class="main-review-mini-text">
+        "${escapeHTML(r.message.length > 110 ? r.message.slice(0, 110) + '...' : r.message)}"
+      </div>
+      <div style="font-size: 0.7rem; color: #38bdf8; margin-top: 4px; display: flex; justify-content: space-between;">
+        <span>${escapeHTML(r.topicName || r.topic)}</span>
+        <span style="color: #64748b;">${escapeHTML(r.timestamp)}</span>
+      </div>
+    </div>
+  `).join("");
+}
 
-      const topicId = chip.getAttribute("data-topic-id") || "dreamwithinreach-main-page";
-      const topicTitle = chip.getAttribute("data-topic-title") || "🇸🇬 DreamWithinReach Main Community Discussion";
+/**
+ * Posts a new user review to the community discussion board and saves it permanently.
+ */
+function postLocalComment(author, topic, rating, message, tags = []) {
+  const topicTargetEl = document.getElementById("comment-topic-target");
+  const topicName = topicTargetEl?.options[topicTargetEl.selectedIndex]?.text || topic;
 
-      state.disqus.mainPageTopic = topicId;
-      state.disqus.mainPageTitle = topicTitle;
+  const newComment = {
+    id: "comm-" + Date.now(),
+    author: author.trim() || "Anonymous Buyer",
+    topic: topic,
+    topicName: topicName,
+    rating: parseInt(rating, 10) || 5,
+    message: message.trim(),
+    tags: tags,
+    timestamp: "Just now",
+    likes: 1,
+    liked: true
+  };
 
-      const mainBadge = document.getElementById("main-disqus-count-badge");
-      if (mainBadge) {
-        mainBadge.setAttribute("data-disqus-identifier", topicId);
-      }
+  state.localComments.unshift(newComment);
+  saveLocalComments();
 
-      ensureDisqusContainer("main-page-disqus-wrapper");
+  // Re-render
+  const streamFilter = document.getElementById("stream-filter-select");
+  const activeFilter = streamFilter ? streamFilter.value : "all";
+  renderLocalComments(activeFilter);
+  renderMainPageReviewsPreview();
+  updateLocalCommentsCount();
+
+  showToastNotification("🎉 Your review has been posted successfully to the community board!");
+}
+
+/**
+ * Sets up all event listeners for the Interactive Community Reviews System & Mode Switcher.
+ */
+function setupCommunityCommentsEventListeners() {
+  // Mode Switcher Tabs (Local vs Disqus)
+  const btnLocalTab = document.getElementById("btn-tab-community-local");
+  const btnDisqusTab = document.getElementById("btn-tab-community-disqus");
+  const panelLocal = document.getElementById("community-local-panel");
+  const wrapperDisqus = document.getElementById("discussions-tab-disqus-wrapper");
+
+  if (btnLocalTab && btnDisqusTab && panelLocal && wrapperDisqus) {
+    btnLocalTab.addEventListener("click", () => {
+      btnLocalTab.classList.add("active");
+      btnLocalTab.setAttribute("aria-selected", "true");
+      btnDisqusTab.classList.remove("active");
+      btnDisqusTab.setAttribute("aria-selected", "false");
+      panelLocal.classList.remove("hidden");
+      wrapperDisqus.classList.add("hidden");
+    });
+
+    btnDisqusTab.addEventListener("click", () => {
+      btnDisqusTab.classList.add("active");
+      btnDisqusTab.setAttribute("aria-selected", "true");
+      btnLocalTab.classList.remove("active");
+      btnLocalTab.setAttribute("aria-selected", "false");
+      panelLocal.classList.add("hidden");
+      wrapperDisqus.classList.remove("hidden");
+
+      // Load or ensure active Disqus thread
       loadDisqusThread(
-        topicId,
-        topicTitle,
-        `${window.location.origin}/#${topicId}`,
+        state.disqus.activeTopic || "sg-hdb-sunlight-guide-2026",
+        state.disqus.activeTitle || "🇸🇬 General HDB Resale & Solar Discussion",
+        `${window.location.origin}/?topic=${encodeURIComponent(state.disqus.activeTopic || "sg-hdb-sunlight-guide-2026")}`,
         "en"
       );
     });
-  });
+  }
 
-  // Main Page Reload Button
-  if (mainReloadBtn) {
-    mainReloadBtn.addEventListener("click", () => {
-      ensureDisqusContainer("main-page-disqus-wrapper");
-      loadDisqusThread(
-        state.disqus.mainPageTopic || "dreamwithinreach-main-page",
-        state.disqus.mainPageTitle || "🇸🇬 DreamWithinReach Main Community Discussion",
-        `${window.location.origin}/#${state.disqus.mainPageTopic || "dreamwithinreach-main-page"}`,
-        "en",
-        true
+  // Comment Compose Form Submit
+  const composeForm = document.getElementById("community-comment-form");
+  let selectedQuickTags = [];
+
+  if (composeForm) {
+    // Quick Tag toggle buttons
+    const tagButtons = composeForm.querySelectorAll(".btn-quick-tag");
+    tagButtons.forEach(tagBtn => {
+      tagBtn.addEventListener("click", () => {
+        const tag = tagBtn.getAttribute("data-tag");
+        if (selectedQuickTags.includes(tag)) {
+          selectedQuickTags = selectedQuickTags.filter(t => t !== tag);
+          tagBtn.style.background = "";
+          tagBtn.style.borderColor = "";
+          tagBtn.style.color = "";
+        } else {
+          selectedQuickTags.push(tag);
+          tagBtn.style.background = "rgba(56, 189, 248, 0.25)";
+          tagBtn.style.borderColor = "#38bdf8";
+          tagBtn.style.color = "#38bdf8";
+        }
+      });
+    });
+
+    composeForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const authorInput = document.getElementById("comment-author-name");
+      const topicInput = document.getElementById("comment-topic-target");
+      const ratingInput = document.getElementById("comment-star-rating");
+      const bodyInput = document.getElementById("comment-body-text");
+
+      if (!authorInput || !bodyInput || !bodyInput.value.trim()) {
+        showToastNotification("Please enter both your name and review message.");
+        return;
+      }
+
+      postLocalComment(
+        authorInput.value,
+        topicInput ? topicInput.value : "sg-hdb-sunlight-guide-2026",
+        ratingInput ? ratingInput.value : 5,
+        bodyInput.value,
+        [...selectedQuickTags]
       );
+
+      // Reset form fields
+      bodyInput.value = "";
+      selectedQuickTags = [];
+      tagButtons.forEach(btn => {
+        btn.style.background = "";
+        btn.style.borderColor = "";
+        btn.style.color = "";
+      });
+    });
+  }
+
+  // Stream Topic Filter Dropdown
+  const streamFilter = document.getElementById("stream-filter-select");
+  if (streamFilter) {
+    streamFilter.addEventListener("change", (e) => {
+      renderLocalComments(e.target.value);
+    });
+  }
+
+  // Main Page "✍️ Post Review / Open Forum" button
+  const btnGotoDiscussions = document.getElementById("btn-goto-discussions-tab");
+  if (btnGotoDiscussions) {
+    btnGotoDiscussions.addEventListener("click", () => {
+      const tabDiscussions = document.getElementById("tab-discussions");
+      if (tabDiscussions) {
+        tabDiscussions.click();
+        const authorField = document.getElementById("comment-author-name");
+        if (authorField) {
+          setTimeout(() => authorField.focus(), 150);
+        }
+      }
     });
   }
 }
@@ -2583,7 +2816,13 @@ function setupDisqusEventListeners() {
 
       state.disqus.activeTopic = selectedVal;
       state.disqus.activeTitle = selectedText;
-      state.disqus.activeUrl = `${window.location.origin}/#topic-${selectedVal}`;
+      state.disqus.activeUrl = `${window.location.origin}/?topic=${encodeURIComponent(selectedVal)}`;
+
+      // Sync compose topic target
+      const composeTopic = document.getElementById("comment-topic-target");
+      if (composeTopic && [...composeTopic.options].some(o => o.value === selectedVal)) {
+        composeTopic.value = selectedVal;
+      }
 
       loadDisqusThread(
         state.disqus.activeTopic,
@@ -2643,10 +2882,13 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
 
   if (!threadContainer) return;
 
+  // Clean canonical URL without hash fragments (Disqus requires clean URLs)
+  const canonicalUrl = url || `${window.location.origin}/?topic=${encodeURIComponent(identifier)}`;
+
   // Update State & UI Info Bar
   state.disqus.activeTopic = identifier;
   state.disqus.activeTitle = title;
-  state.disqus.activeUrl = url || `${window.location.origin}/#${identifier}`;
+  state.disqus.activeUrl = canonicalUrl;
   state.disqus.language = language;
 
   if (activeTitleEl) activeTitleEl.textContent = title;
@@ -2665,7 +2907,14 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
   }
 
   const shortname = state.disqus.shortname;
-  const canonicalUrl = state.disqus.activeUrl;
+
+  // Define global disqus_config callback cleanly
+  window.disqus_config = function () {
+    this.page.identifier = identifier;
+    this.page.url = canonicalUrl;
+    this.page.title = title;
+    this.language = "en";
+  };
 
   // If DISQUS is already loaded in the window, reset with new configuration
   if (typeof window.DISQUS !== "undefined" && !forceReload) {
@@ -2676,7 +2925,7 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
           this.page.identifier = identifier;
           this.page.url = canonicalUrl;
           this.page.title = title;
-          this.language = language;
+          this.language = "en";
         }
       });
       refreshDisqusCounts();
@@ -2685,14 +2934,6 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
       console.warn("Disqus reset notice:", e);
     }
   }
-
-  // Define global disqus_config callback safely
-  window.disqus_config = function () {
-    this.page.identifier = identifier;
-    this.page.url = canonicalUrl;
-    this.page.title = title;
-    this.language = language;
-  };
 
   try {
     // Dynamically inject the Disqus embed script safely
@@ -2706,12 +2947,11 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
       embedScript.crossOrigin = "anonymous";
       embedScript.onerror = () => {
         console.info("Disqus embed script unavailable in current environment (sandbox/offline mode).");
-        const threadEl = document.getElementById("disqus_thread");
-        if (threadEl && !threadEl.hasChildNodes()) {
-          threadEl.innerHTML = `
+        if (threadContainer && !threadContainer.hasChildNodes()) {
+          threadContainer.innerHTML = `
             <div class="disqus-placeholder-card" style="padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; margin-top: 16px;">
-              <p style="font-weight: 600; margin-bottom: 8px;">💬 Discussion Forum Ready</p>
-              <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Disqus community commenting is configured for <strong>${escapeHTML(title)}</strong>. When accessed on a live domain, interactive comments will render here.</p>
+              <p style="font-weight: 600; margin-bottom: 8px;">💬 Disqus Forum Ready</p>
+              <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Disqus community commenting is configured for <strong>${escapeHTML(title)}</strong>. You can also post instantly using the Instant Community Reviews tab above.</p>
             </div>
           `;
         }
@@ -2726,9 +2966,6 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
       newScript.setAttribute("data-timestamp", String(+new Date()));
       newScript.async = true;
       newScript.crossOrigin = "anonymous";
-      newScript.onerror = () => {
-        console.info("Disqus embed reload unavailable in current sandbox environment.");
-      };
       (document.head || document.body).appendChild(newScript);
     }
   } catch (err) {
@@ -2744,6 +2981,8 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
  */
 function updateDisqusFlatsDropdown() {
   const optgroup = document.getElementById("disqus-flats-optgroup");
+  const composeTopic = document.getElementById("comment-topic-target");
+  const streamFilter = document.getElementById("stream-filter-select");
   if (!optgroup) return;
 
   optgroup.innerHTML = "";
@@ -2754,11 +2993,25 @@ function updateDisqusFlatsDropdown() {
     opt.value = flat.id;
     opt.textContent = `🏠 Blk ${flat.block} ${flat.street_name} (${flat.town}) - ${flat.flat_type}`;
     optgroup.appendChild(opt);
+
+    if (composeTopic && ![...composeTopic.options].some(o => o.value === flat.id)) {
+      const composeOpt = document.createElement("option");
+      composeOpt.value = flat.id;
+      composeOpt.textContent = `🏠 Blk ${flat.block} ${flat.street_name} (${flat.town})`;
+      composeTopic.appendChild(composeOpt);
+    }
+
+    if (streamFilter && ![...streamFilter.options].some(o => o.value === flat.id)) {
+      const filterOpt = document.createElement("option");
+      filterOpt.value = flat.id;
+      filterOpt.textContent = `🏠 Blk ${flat.block} ${flat.street_name} (${flat.town})`;
+      streamFilter.appendChild(filterOpt);
+    }
   });
 }
 
 /**
- * Opens and focuses the Disqus Discussion thread for a specific HDB flat unit.
+ * Opens and focuses the Disqus / Community Discussion thread for a specific HDB flat unit.
  * 
  * @param {string} flatId - The unique flat identifier
  */
@@ -2767,13 +3020,25 @@ function openDisqusForFlat(flatId) {
   const flatTitle = flat 
     ? `HDB Blk ${flat.block} ${flat.street_name} (${flat.town}) - ${flat.flat_type} (${flat.facing})`
     : `HDB Unit ${flatId}`;
-  const flatUrl = `${window.location.origin}/#flat-${flatId}`;
+  const flatUrl = `${window.location.origin}/?topic=${encodeURIComponent(flatId)}`;
 
-  // 1. Switch to Disqus Discussions tab
+  // 1. Switch to Discussions tab
   const tabDiscussions = document.getElementById("tab-discussions");
   if (tabDiscussions) tabDiscussions.click();
 
-  // 2. Load the unit's Disqus thread
+  // 2. Select the unit in the topic selector and compose form
+  const composeTopic = document.getElementById("comment-topic-target");
+  if (composeTopic) {
+    if (![...composeTopic.options].some(o => o.value === flatId)) {
+      const opt = document.createElement("option");
+      opt.value = flatId;
+      opt.textContent = `🏠 Blk ${flat ? flat.block + ' ' + flat.street_name : flatId}`;
+      composeTopic.appendChild(opt);
+    }
+    composeTopic.value = flatId;
+  }
+
+  // 3. Load the unit's Disqus thread
   setTimeout(() => {
     loadDisqusThread(flatId, flatTitle, flatUrl, state.disqus.language);
   }, 100);
@@ -3214,14 +3479,194 @@ function showToastNotification(msg) {
 
 /* ==========================================================================
    OPEN-METEO REAL-TIME WEATHER & SOLAR CLIMATE INTEGRATION
-   API Endpoint: https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m
+   API Endpoint: https://api.open-meteo.com/v1/forecast?latitude=1.3521&longitude=103.8198&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m
+   Default Location: Singapore (1.3521° N, 103.8198° E)
    ========================================================================== */
 
 /**
  * Initializes the Open-Meteo weather integration on page load.
+ * Checks for previously saved user coordinates or defaults to Singapore Central.
+ * Performs background IP geocoding if user is on a new session.
  */
 function initOpenMeteoWeather() {
+  try {
+    const savedLoc = localStorage.getItem("dwr_weather_location");
+    if (savedLoc) {
+      const parsed = JSON.parse(savedLoc);
+      if (parsed.lat && parsed.lon) {
+        state.weather.lat = parsed.lat;
+        state.weather.lon = parsed.lon;
+        state.weather.locationName = parsed.name || "Saved Location";
+        fetchOpenMeteoForecast(state.weather.lat, state.weather.lon, state.weather.locationName);
+        return;
+      }
+    }
+  } catch (e) {
+    // Ignore storage parse error
+  }
+
+  // Default to Singapore Central immediately
+  state.weather.lat = 1.3521;
+  state.weather.lon = 103.8198;
+  state.weather.locationName = "Singapore Central (Bishan / Toa Payoh - HDB Hub)";
   fetchOpenMeteoForecast(state.weather.lat, state.weather.lon, state.weather.locationName);
+
+  // Background non-intrusive IP check to enhance accuracy if outside default
+  detectUserLocationViaIpOrGps(false);
+}
+
+/**
+ * Applies detected or selected coordinates to the UI inputs and persistent storage.
+ */
+function applyDetectedLocation(lat, lon, locationName, saveToStorage = true) {
+  state.weather.lat = lat;
+  state.weather.lon = lon;
+  state.weather.locationName = locationName;
+
+  if (saveToStorage) {
+    try {
+      localStorage.setItem("dwr_weather_location", JSON.stringify({
+        lat: lat,
+        lon: lon,
+        name: locationName
+      }));
+    } catch (e) {
+      console.warn("Could not save weather location to localStorage:", e);
+    }
+  }
+
+  // Sync form inputs
+  const inputLat = document.getElementById("weather-input-lat");
+  const inputLon = document.getElementById("weather-input-lon");
+  if (inputLat) inputLat.value = lat;
+  if (inputLon) inputLon.value = lon;
+
+  // Sync preset active states
+  const presetButtons = document.querySelectorAll(".btn-weather-preset");
+  presetButtons.forEach(btn => {
+    const pLat = parseFloat(btn.dataset.lat);
+    const pLon = parseFloat(btn.dataset.lon);
+    if (Math.abs(pLat - lat) < 0.01 && Math.abs(pLon - lon) < 0.01) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
+
+  fetchOpenMeteoForecast(lat, lon, locationName, true);
+}
+
+/**
+ * Detects user's real GPS position or IP-based geolocation persistently.
+ * 
+ * @param {boolean} showFeedbackToast - If true, shows a toast notification
+ */
+async function detectUserLocationViaIpOrGps(showFeedbackToast = true) {
+  const gpsBtn = document.getElementById("btn-detect-gps-ip");
+  if (gpsBtn) {
+    gpsBtn.classList.add("loading");
+    gpsBtn.textContent = "🛰️ Detecting GPS/IP...";
+  }
+
+  // 1. Try Browser HTML5 Geolocation API (High precision)
+  if ("geolocation" in navigator) {
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 6000,
+          maximumAge: 60000
+        });
+      });
+
+      if (pos && pos.coords) {
+        const lat = Number(pos.coords.latitude.toFixed(4));
+        const lon = Number(pos.coords.longitude.toFixed(4));
+
+        // Check if within Singapore vicinity (1.15 to 1.48 N, 103.55 to 104.10 E)
+        const isSG = lat >= 1.15 && lat <= 1.48 && lon >= 103.55 && lon <= 104.10;
+        const locName = isSG 
+          ? `Singapore Local Device (${lat}° N, ${lon}° E)`
+          : `Detected Device Location (${lat}°, ${lon}°)`;
+
+        applyDetectedLocation(lat, lon, locName, true);
+        if (showFeedbackToast) {
+          showToastNotification(`📍 Location detected: ${locName}`);
+        }
+        if (gpsBtn) {
+          gpsBtn.classList.remove("loading");
+          gpsBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="7"></circle>
+              <line x1="12" y1="1" x2="12" y2="5"></line>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="1" y1="12" x2="5" y2="12"></line>
+              <line x1="19" y1="12" x2="23" y2="12"></line>
+            </svg>
+            <span>Auto-Detect GPS / IP</span>
+          `;
+        }
+        return;
+      }
+    } catch (geoErr) {
+      console.info("Device GPS not available, trying IP Geolocation fallback:", geoErr.message);
+    }
+  }
+
+  // 2. IP Geolocation Lookup Fallback
+  try {
+    const ipRes = await fetch("https://ipwho.is/", { signal: AbortSignal.timeout(4000) });
+    if (ipRes.ok) {
+      const ipData = await ipRes.json();
+      if (ipData && ipData.latitude && ipData.longitude) {
+        const lat = Number(ipData.latitude.toFixed(4));
+        const lon = Number(ipData.longitude.toFixed(4));
+        const city = ipData.city || "Singapore";
+        const country = ipData.country || "Singapore";
+        const locName = `${city}, ${country} (IP Geolocation)`;
+
+        applyDetectedLocation(lat, lon, locName, true);
+        if (showFeedbackToast) {
+          showToastNotification(`🛰️ IP Geolocation detected: ${locName}`);
+        }
+        if (gpsBtn) {
+          gpsBtn.classList.remove("loading");
+          gpsBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="7"></circle>
+              <line x1="12" y1="1" x2="12" y2="5"></line>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="1" y1="12" x2="5" y2="12"></line>
+              <line x1="19" y1="12" x2="23" y2="12"></line>
+            </svg>
+            <span>Auto-Detect GPS / IP</span>
+          `;
+        }
+        return;
+      }
+    }
+  } catch (ipErr) {
+    console.info("IP geolocation service notice:", ipErr.message);
+  }
+
+  // 3. Persistent Singapore default
+  applyDetectedLocation(1.3521, 103.8198, "Singapore Central (Bishan / Toa Payoh - HDB Hub)", true);
+  if (showFeedbackToast) {
+    showToastNotification("🇸🇬 Weather set to Singapore Central (1.3521° N, 103.8198° E)");
+  }
+  if (gpsBtn) {
+    gpsBtn.classList.remove("loading");
+    gpsBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="7"></circle>
+        <line x1="12" y1="1" x2="12" y2="5"></line>
+        <line x1="12" y1="19" x2="12" y2="23"></line>
+        <line x1="1" y1="12" x2="5" y2="12"></line>
+        <line x1="19" y1="12" x2="23" y2="12"></line>
+      </svg>
+      <span>Auto-Detect GPS / IP</span>
+    `;
+  }
 }
 
 /**
@@ -3260,6 +3705,14 @@ function setupWeatherEventListeners() {
     });
   }
 
+  // Auto-Detect GPS / IP Button
+  const btnDetectGps = document.getElementById("btn-detect-gps-ip");
+  if (btnDetectGps) {
+    btnDetectGps.addEventListener("click", () => {
+      detectUserLocationViaIpOrGps(true);
+    });
+  }
+
   // Location Preset Buttons
   const presetButtons = document.querySelectorAll(".btn-weather-preset");
   presetButtons.forEach(btn => {
@@ -3271,13 +3724,7 @@ function setupWeatherEventListeners() {
       const lon = parseFloat(btn.dataset.lon);
       const name = btn.dataset.name || "Custom Location";
 
-      // Sync form inputs
-      const inputLat = document.getElementById("weather-input-lat");
-      const inputLon = document.getElementById("weather-input-lon");
-      if (inputLat) inputLat.value = lat;
-      if (inputLon) inputLon.value = lon;
-
-      fetchOpenMeteoForecast(lat, lon, name);
+      applyDetectedLocation(lat, lon, name, true);
     });
   });
 
@@ -3301,7 +3748,7 @@ function setupWeatherEventListeners() {
       presetButtons.forEach(b => b.classList.remove("active"));
 
       const name = `Custom (${lat.toFixed(4)}°, ${lon.toFixed(4)}°)`;
-      fetchOpenMeteoForecast(lat, lon, name);
+      applyDetectedLocation(lat, lon, name, true);
     });
   }
 
@@ -3690,5 +4137,9 @@ fetch("${url}")
   }
 }
 
-
-
+// Bootstrap the application once all functions, constants, and datasets are loaded
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}

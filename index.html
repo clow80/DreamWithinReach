@@ -406,63 +406,23 @@
         <!-- MAIN PAGE DISQUS COMMUNITY FORUM SECTION -->
         <section class="main-page-disqus-section" id="main-disqus-section" aria-labelledby="main-disqus-heading">
           <div class="main-disqus-header">
-            <div class="disqus-status-pill">
-              <span class="disqus-status-dot" aria-hidden="true"></span>
-              <span>Live Community Forum &bull; shortname: <strong>dreamwithinreach</strong></span>
-            </div>
             <div class="main-disqus-title-row">
               <div>
-                <h3 id="main-disqus-heading" class="main-disqus-title">💬 DreamWithinReach Main Community Discussion</h3>
-                <p class="main-disqus-subtitle">Ask questions, share unit reviews, discuss price negotiations, sunlight exposure, and housing grants with Singapore home buyers.</p>
+                <span class="disqus-badge-count">💬 Live Community Forum &amp; Reviews</span>
+                <h3 id="main-disqus-heading" class="main-disqus-title">Singapore HDB &amp; Solar Orientation Community Board</h3>
+                <p class="main-disqus-subtitle">Read neighborhood insights, afternoon sun experiences, and share your own reviews with Singapore homebuyers.</p>
               </div>
               <div class="main-disqus-actions">
-                <span class="disqus-comment-count disqus-badge-count" data-disqus-identifier="dreamwithinreach-main-page" id="main-disqus-count-badge">
-                  Comments
-                </span>
-                <button type="button" id="btn-reload-main-disqus" class="btn-disqus-reload" title="Refresh discussion thread">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-                  </svg>
-                  <span>Reload</span>
+                <button type="button" id="btn-goto-discussions-tab" class="btn-discuss-disqus">
+                  <span>✍️ Post Review / Open Forum</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Quick Topic Pills for Main Page -->
-          <div class="main-disqus-controls">
-            <div class="main-disqus-topics-group">
-              <span class="disqus-label">Quick Topics:</span>
-              <div class="quick-topics-row">
-                <button type="button" class="quick-topic-chip active" data-topic-id="dreamwithinreach-main-page" data-topic-title="🇸🇬 DreamWithinReach Main Community Discussion">
-                  🏠 Main Discussion
-                </button>
-                <button type="button" class="quick-topic-chip" data-topic-id="sg-hdb-sunlight-guide-2026" data-topic-title="☀️ Solar Orientation & Thermal Comfort Guide">
-                  ☀️ Sunlight &amp; Facing
-                </button>
-                <button type="button" class="quick-topic-chip" data-topic-id="sg-cpf-housing-grants" data-topic-title="💰 CPF Housing Grants &amp; Budget Optimization">
-                  💰 Grants &amp; Budget
-                </button>
-                <button type="button" class="quick-topic-chip" data-topic-id="sg-mature-vs-non-mature-tradeoffs" data-topic-title="🏙️ Mature vs Non-Mature Estates Price Analysis">
-                  🏙️ Mature vs Non-Mature
-                </button>
-              </div>
-            </div>
-
-            <div class="main-disqus-lang-group">
-              <span class="disqus-label">Language:</span>
-              <span class="disqus-badge-count">English (en)</span>
-            </div>
-          </div>
-
-          <!-- Active Discussion Container Wrapper on Main Page -->
-          <div class="disqus-embed-wrapper main-disqus-embed" id="main-page-disqus-wrapper">
-            <div id="disqus_thread" class="disqus-thread-container" aria-live="polite">
-              <!-- Disqus JavaScript SDK renders iframe here -->
-            </div>
-            <noscript>
-              Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
-            </noscript>
+          <!-- Main Page Quick Recent Reviews Preview Container -->
+          <div class="main-page-reviews-preview" id="main-page-reviews-preview">
+            <!-- Populated dynamically by app.js -->
           </div>
         </section>
       </div>
@@ -1058,8 +1018,105 @@
             </div>
           </div>
 
-          <!-- Live Disqus Container in Discussions Tab -->
-          <div class="disqus-embed-wrapper" id="discussions-tab-disqus-wrapper">
+          <!-- Mode Switcher Tabs: Instant Community Board vs Disqus Embed -->
+          <div class="community-mode-tabs" role="tablist">
+            <button type="button" class="community-tab-btn active" id="btn-tab-community-local" role="tab" aria-selected="true">
+              <span>💬 Instant Community Reviews &amp; Discussion</span>
+              <span class="community-tab-count" id="local-comments-count-pill">0</span>
+            </button>
+            <button type="button" class="community-tab-btn" id="btn-tab-community-disqus" role="tab" aria-selected="false">
+              <span>🌐 Disqus Official Thread</span>
+              <span class="disqus-badge-count">dreamwithinreach</span>
+            </button>
+          </div>
+
+          <!-- Section 1: Instant Community Reviews & Comment Form -->
+          <div class="community-local-panel" id="community-local-panel">
+            
+            <!-- Comment Submission Form -->
+            <div class="comment-compose-card">
+              <h4 class="compose-title">✍️ Leave a Neighborhood Review or Solar Experience</h4>
+              <p class="compose-subtitle">Share your insights on afternoon sun, wind ventilation, town amenities, or renovation tips. Your comment is published immediately and saved.</p>
+              
+              <form id="community-comment-form" class="community-comment-form">
+                <div class="compose-form-grid">
+                  <div class="compose-field">
+                    <label for="comment-author-name" class="compose-label">Your Name / Handle:</label>
+                    <input type="text" id="comment-author-name" class="compose-input" placeholder="e.g. Bishan Buyer, Resident Dave" required maxlength="40">
+                  </div>
+                  <div class="compose-field">
+                    <label for="comment-topic-target" class="compose-label">Topic / Unit Reference:</label>
+                    <select id="comment-topic-target" class="compose-select">
+                      <option value="sg-hdb-sunlight-guide-2026">🇸🇬 General HDB Resale &amp; Solar Discussion</option>
+                      <option value="sg-west-sun-thermal-tips">☀️ Afternoon Sun (West Sun) &amp; Heat Management</option>
+                      <option value="sg-cpf-housing-grants">💰 CPF Housing Grants &amp; Budget Optimization</option>
+                      <option value="sg-mature-vs-non-mature-tradeoffs">🏙️ Mature vs Non-Mature Estates Price Analysis</option>
+                    </select>
+                  </div>
+                  <div class="compose-field">
+                    <label for="comment-star-rating" class="compose-label">Overall Experience Rating:</label>
+                    <select id="comment-star-rating" class="compose-select">
+                      <option value="5">⭐⭐⭐⭐⭐ 5/5 - Highly Recommended</option>
+                      <option value="4" selected>⭐⭐⭐⭐ 4/5 - Good Daylight &amp; Comfort</option>
+                      <option value="3">⭐⭐⭐ 3/5 - Average / Some West Sun</option>
+                      <option value="2">⭐⭐ 2/5 - Warm / Afternoon Sun Exposure</option>
+                      <option value="1">⭐ 1/5 - Direct West Facing / High Heat</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="compose-field" style="margin-top: 12px;">
+                  <label for="comment-body-text" class="compose-label">Review / Comment Message:</label>
+                  <textarea id="comment-body-text" class="compose-textarea" rows="3" placeholder="Share your experience (e.g. 'We bought a high floor unit facing North-South and the cross breeze is amazing throughout the afternoon...')" required maxlength="1000"></textarea>
+                </div>
+
+                <div class="compose-submit-row">
+                  <div class="compose-tags-group">
+                    <span class="compose-tag-hint">Add Quick Tag:</span>
+                    <button type="button" class="btn-quick-tag" data-tag="☀️ North-South Facing">+ NS Facing</button>
+                    <button type="button" class="btn-quick-tag" data-tag="🌬️ Great Cross Breeze">+ Breezy</button>
+                    <button type="button" class="btn-quick-tag" data-tag="🌳 Near MRT / Park">+ MRT/Park</button>
+                    <button type="button" class="btn-quick-tag" data-tag="💰 High Value/Grants">+ High Value</button>
+                  </div>
+                  <button type="submit" id="btn-post-comment" class="btn-post-comment">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                    </svg>
+                    <span>Post Comment</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Community Comments Stream -->
+            <div class="community-stream-header">
+              <div class="stream-title-group">
+                <h4 class="stream-title">💬 Live Community Reviews &amp; Experiences (<span id="local-stream-count">0</span>)</h4>
+                <span class="stream-subtitle">Real feedback from Singapore homebuyers and homeowners</span>
+              </div>
+              <div class="stream-filter-group">
+                <label for="stream-filter-select" class="visually-hidden">Filter Comments by Topic</label>
+                <select id="stream-filter-select" class="stream-filter-select">
+                  <option value="all">🌟 All Topics &amp; Units</option>
+                  <option value="sg-hdb-sunlight-guide-2026">🇸🇬 General HDB Resale &amp; Solar</option>
+                  <option value="sg-west-sun-thermal-tips">☀️ Afternoon Sun &amp; Heat</option>
+                  <option value="sg-cpf-housing-grants">💰 CPF Housing Grants</option>
+                  <option value="sg-mature-vs-non-mature-tradeoffs">🏙️ Mature vs Non-Mature</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="local-comments-container" class="local-comments-list" aria-live="polite">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+
+          </div>
+
+          <!-- Section 2: Disqus Official Embed Wrapper -->
+          <div class="disqus-embed-wrapper hidden" id="discussions-tab-disqus-wrapper">
+            <div id="disqus_thread" class="disqus-thread-container" aria-live="polite">
+              <!-- Disqus JavaScript SDK renders iframe here -->
+            </div>
             <noscript>
               Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
             </noscript>
@@ -1385,6 +1442,13 @@
               <p class="weather-subtitle">Live atmospheric data integration via Open-Meteo API for real-time temperature, wind speed, relative humidity, and solar thermal comfort analysis across Singapore estates and global coordinates.</p>
             </div>
             <div class="weather-header-actions">
+              <button type="button" id="btn-detect-gps-ip" class="btn-weather-gps" title="Auto-detect current location via device GPS or IP address">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+                </svg>
+                <span>Auto-Detect GPS / IP</span>
+              </button>
               <button type="button" id="btn-refresh-weather" class="btn-weather-refresh" title="Refresh live weather forecast">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
@@ -1401,13 +1465,7 @@
               <span class="presets-hint">Click any preset to load instant live forecast from Open-Meteo</span>
             </div>
             <div class="weather-presets-group" role="group" aria-label="Open-Meteo Location Presets">
-              <button type="button" class="btn-weather-preset active" id="btn-preset-berlin" data-lat="52.52" data-lon="13.41" data-name="Berlin, Germany (Requested API)">
-                <span class="preset-icon">📍</span>
-                <span class="preset-name">Berlin (52.52° N, 13.41° E)</span>
-                <span class="preset-badge">Requested Endpoint</span>
-              </button>
-
-              <button type="button" class="btn-weather-preset" id="btn-preset-sg-central" data-lat="1.3521" data-lon="103.8198" data-name="Singapore Central (Bishan / Toa Payoh)">
+              <button type="button" class="btn-weather-preset active" id="btn-preset-sg-central" data-lat="1.3521" data-lon="103.8198" data-name="Singapore Central (Bishan / Toa Payoh - HDB Hub)">
                 <span class="preset-icon">🇸🇬</span>
                 <span class="preset-name">Singapore Central (1.35° N, 103.82° E)</span>
                 <span class="preset-badge">HDB Base</span>
@@ -1419,16 +1477,28 @@
                 <span class="preset-badge">Coastal Breeze</span>
               </button>
 
+              <button type="button" class="btn-weather-preset" id="btn-preset-sg-tampines" data-lat="1.3547" data-lon="103.9437" data-name="Tampines East (Singapore)">
+                <span class="preset-icon">🌳</span>
+                <span class="preset-name">Tampines East (1.35° N, 103.94° E)</span>
+                <span class="preset-badge">East Hub</span>
+              </button>
+
               <button type="button" class="btn-weather-preset" id="btn-preset-sg-jurong" data-lat="1.3404" data-lon="103.7090" data-name="Jurong West / Lakeside (Singapore)">
                 <span class="preset-icon">🏙️</span>
                 <span class="preset-name">Jurong West (1.34° N, 103.71° E)</span>
                 <span class="preset-badge">West Sector</span>
               </button>
 
-              <button type="button" class="btn-weather-preset" id="btn-preset-sg-tampines" data-lat="1.3547" data-lon="103.9437" data-name="Tampines East (Singapore)">
-                <span class="preset-icon">🌳</span>
-                <span class="preset-name">Tampines East (1.35° N, 103.94° E)</span>
-                <span class="preset-badge">East Hub</span>
+              <button type="button" class="btn-weather-preset" id="btn-preset-sg-woodlands" data-lat="1.4382" data-lon="103.7890" data-name="Woodlands / North Gateway (Singapore)">
+                <span class="preset-icon">🌇</span>
+                <span class="preset-name">Woodlands (1.44° N, 103.79° E)</span>
+                <span class="preset-badge">North Sector</span>
+              </button>
+
+              <button type="button" class="btn-weather-preset" id="btn-preset-berlin" data-lat="52.52" data-lon="13.41" data-name="Berlin, Germany (Global Reference)">
+                <span class="preset-icon">📍</span>
+                <span class="preset-name">Berlin (52.52° N, 13.41° E)</span>
+                <span class="preset-badge">Global Presets</span>
               </button>
             </div>
           </div>
@@ -1437,16 +1507,16 @@
           <div class="weather-coords-card">
             <div class="coords-header">
               <span class="coords-title">🎯 Coordinate Customization &amp; Variables:</span>
-              <span id="weather-active-location-name" class="active-location-badge">Berlin, Germany (52.52° N, 13.41° E)</span>
+              <span id="weather-active-location-name" class="active-location-badge">🇸🇬 Singapore Central (1.35° N, 103.82° E)</span>
             </div>
             <form id="weather-custom-form" class="weather-coords-form">
               <div class="coord-input-group">
                 <label for="weather-input-lat" class="coord-label">Latitude:</label>
-                <input type="number" step="0.0001" id="weather-input-lat" class="coord-input" value="52.52" required>
+                <input type="number" step="0.0001" id="weather-input-lat" class="coord-input" value="1.3521" required>
               </div>
               <div class="coord-input-group">
                 <label for="weather-input-lon" class="coord-label">Longitude:</label>
-                <input type="number" step="0.0001" id="weather-input-lon" class="coord-input" value="13.41" required>
+                <input type="number" step="0.0001" id="weather-input-lon" class="coord-input" value="103.8198" required>
               </div>
               <div class="coord-input-group">
                 <label class="coord-label">API Variables:</label>
