@@ -26,6 +26,7 @@
           sMsg.indexOf("Script error") !== -1 ||
           sMsg.indexOf("ResizeObserver loop") !== -1 ||
           sSrc.indexOf("disqus") !== -1 ||
+          sSrc.indexOf("clarity") !== -1 ||
           sSrc.indexOf("extension") !== -1
         );
       }
@@ -55,6 +56,15 @@
         }
       });
     })();
+  </script>
+
+  <!-- Microsoft Clarity Tracking Code -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y99r3d1lfn");
   </script>
 </head>
 <body>
