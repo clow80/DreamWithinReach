@@ -2952,7 +2952,7 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
 
   const shortname = state.disqus.shortname;
 
-  // Define global disqus_config callback cleanly
+  // Define global disqus_config callback cleanly before script injection
   window.disqus_config = function () {
     this.page.identifier = identifier;
     this.page.url = canonicalUrl;
@@ -2980,7 +2980,7 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
   }
 
   try {
-    // Dynamically inject the Disqus embed script safely
+    // Dynamically inject the official Disqus embed script
     let embedScript = document.getElementById("disqus-embed-script");
     if (!embedScript) {
       embedScript = document.createElement("script");
@@ -2988,14 +2988,17 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
       embedScript.src = `https://${shortname}.disqus.com/embed.js`;
       embedScript.setAttribute("data-timestamp", String(+new Date()));
       embedScript.async = true;
-      embedScript.crossOrigin = "anonymous";
       embedScript.onerror = () => {
-        console.info("Disqus embed script unavailable in current environment (sandbox/offline mode).");
+        console.info("Disqus embed script unavailable or restricted by browser cookie privacy in iframe.");
         if (threadContainer && !threadContainer.hasChildNodes()) {
           threadContainer.innerHTML = `
             <div class="disqus-placeholder-card" style="padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; margin-top: 16px;">
-              <p style="font-weight: 600; margin-bottom: 8px;">💬 Disqus Forum Ready</p>
-              <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Disqus community commenting is configured for <strong>${escapeHTML(title)}</strong>. You can post instantly using the Instant Community Reviews tab or open Disqus directly.</p>
+              <p style="font-weight: 600; margin-bottom: 8px;">💬 Disqus Forum Discussion</p>
+              <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Active Thread: <strong>${escapeHTML(title)}</strong>. If your browser blocks third-party cookies in preview mode, please use the <strong>Instant Community Reviews</strong> tab above or click below.</p>
+              <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+                <button type="button" class="btn-quick-tag" onclick="document.getElementById('btn-tab-community-local')?.click()" style="background: #0284c7; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer;">✍️ Post with Instant Review Box</button>
+                <a href="https://disqus.com/home/discussion/dreamwithinreach/${encodeURIComponent(identifier)}/" target="_blank" rel="noopener noreferrer" class="btn-quick-tag" style="background: rgba(255,255,255,0.1); color: #38bdf8; text-decoration: none; padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.3);">Open Direct on Disqus ↗</a>
+              </div>
             </div>
           `;
         }
@@ -3009,7 +3012,6 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
       newScript.src = `https://${shortname}.disqus.com/embed.js`;
       newScript.setAttribute("data-timestamp", String(+new Date()));
       newScript.async = true;
-      newScript.crossOrigin = "anonymous";
       (document.head || document.body).appendChild(newScript);
     }
   } catch (err) {
