@@ -1152,6 +1152,17 @@ HDB_DATASET.forEach(item => {
  * @param {object} res - HTTP response object
  */
 export default async function searchHandler(req, res) {
+  // Set CORS headers for serverless & cross-origin consumers
+  if (typeof res.setHeader === "function") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   // Support both GET (query parameters) and POST (JSON body)
   const params = req.method === "POST" ? (req.body || {}) : (req.query || {});
 

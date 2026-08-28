@@ -421,6 +421,9 @@ async function fetchSearchResults() {
   if (loadingContainer) loadingContainer.classList.remove("hidden");
   if (emptyContainer) emptyContainer.classList.add("hidden");
 
+  const abortCtrl = new AbortController();
+  const timeoutId = setTimeout(() => abortCtrl.abort(), 6000);
+
   try {
     // Construct query parameters
     const queryParams = new URLSearchParams({
@@ -434,15 +437,25 @@ async function fetchSearchResults() {
       sortBy: state.filters.sortBy
     });
 
-    const response = await fetch(`/api/search?${queryParams.toString()}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    let response;
+    try {
+      response = await fetch(`/api/search?${queryParams.toString()}`, {
+        signal: abortCtrl.signal,
+        headers: { "Accept": "application/json" }
+      });
+    } catch (fetchErr) {
+      console.warn("Primary /api/search fetch error, attempting fallback...", fetchErr);
     }
+    clearTimeout(timeoutId);
 
-    const data = await response.json();
-    state.data.flats = data.results || [];
-    state.data.meta = data.meta || {};
-    state.data.analytics = data.analytics || {};
+    if (response && response.ok) {
+      const data = await response.json();
+      state.data.flats = data.results || [];
+      state.data.meta = data.meta || {};
+      state.data.analytics = data.analytics || {};
+    } else {
+      console.warn("API response not ok, retaining existing or fallback dataset");
+    }
 
     // Render results into HTML UI
     renderResultsHeaderAndMetrics();
@@ -455,8 +468,11 @@ async function fetchSearchResults() {
     refreshDisqusCounts();
 
   } catch (error) {
-    console.error("Failed to fetch search results from /api/search:", error);
+    console.error("Failed to fetch search results:", error);
+    renderResultsHeaderAndMetrics();
+    renderFlatsList();
   } finally {
+    clearTimeout(timeoutId);
     if (loadingContainer) loadingContainer.classList.add("hidden");
   }
 }
@@ -2732,7 +2748,19 @@ async function executeDatagovQuery(queryParams, presetName = "custom") {
   const startTime = performance.now();
 
   try {
-    const response = await fetch(`/api/datagov/resale?${officialParams.toString()}`);
+    let response;
+    try {
+      response = await fetch(`/api/datagov/resale?${officialParams.toString()}`);
+    } catch (proxyErr) {
+      console.warn("Proxy fetch failed, trying direct data.gov.sg endpoint...", proxyErr);
+      response = await fetch(officialTargetUrl);
+    }
+
+    if (!response || !response.ok) {
+      // Second attempt directly via data.gov.sg CORS endpoint
+      response = await fetch(officialTargetUrl);
+    }
+
     const latencyMs = Math.round(performance.now() - startTime);
 
     if (!response.ok) {
@@ -2807,7 +2835,18 @@ async function fetchDatagovMetadata(datasetId) {
   const startTime = performance.now();
 
   try {
-    const response = await fetch(`/api/datagov/metadata?dataset_id=${datasetId}`);
+    let response;
+    try {
+      response = await fetch(`/api/datagov/metadata?dataset_id=${datasetId}`);
+    } catch (proxyErr) {
+      console.warn("Proxy metadata fetch failed, trying direct api-production.data.gov.sg...", proxyErr);
+      response = await fetch(metadataUrl);
+    }
+
+    if (!response || !response.ok) {
+      response = await fetch(metadataUrl);
+    }
+
     const latencyMs = Math.round(performance.now() - startTime);
 
     if (!response.ok) {

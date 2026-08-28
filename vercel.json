@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS, PUT, DELETE" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-Requested-With, Content-Type, Accept, Authorization" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/action/datastore_search", "destination": "/api/datastore_search" },
+    { "source": "/api/datasets/:dataset_id/metadata", "destination": "/api/datagov/metadata" }
+  ]
+}
