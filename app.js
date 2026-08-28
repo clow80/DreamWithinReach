@@ -637,13 +637,7 @@ function setupTabNavigation() {
 
       // When switching to specific views, trigger view-specific lifecycle hooks
       if (tabObj.key === "results") {
-        ensureDisqusContainer("main-page-disqus-wrapper");
-        loadDisqusThread(
-          state.disqus.mainPageTopic || "dreamwithinreach-main-page",
-          state.disqus.mainPageTitle || "🇸🇬 DreamWithinReach Main Community Discussion",
-          `${window.location.origin}/#${state.disqus.mainPageTopic || "dreamwithinreach-main-page"}`,
-          state.disqus.language
-        );
+        renderMainPageReviewsPreview();
       } else if (tabObj.key === "map") {
         renderMapMarkers();
       } else if (tabObj.key === "charts") {
@@ -659,7 +653,7 @@ function setupTabNavigation() {
         loadDisqusThread(
           state.disqus.activeTopic,
           state.disqus.activeTitle,
-          state.disqus.activeUrl || `${window.location.origin}/#${state.disqus.activeTopic}`,
+          state.disqus.activeUrl || `${window.location.origin}/?topic=${encodeURIComponent(state.disqus.activeTopic)}`,
           state.disqus.language
         );
       } else if (tabObj.key === "datagov") {
@@ -2650,6 +2644,23 @@ function renderMainPageReviewsPreview() {
 }
 
 /**
+ * Ensures that the disqus_thread element exists inside the desired container.
+ */
+function ensureDisqusContainer(containerId) {
+  const target = document.getElementById(containerId);
+  if (!target) return;
+  let thread = document.getElementById("disqus_thread");
+  if (!thread) {
+    thread = document.createElement("div");
+    thread.id = "disqus_thread";
+    thread.className = "disqus-thread-container";
+  }
+  if (thread.parentElement !== target) {
+    target.appendChild(thread);
+  }
+}
+
+/**
  * Posts a new user review to the community discussion board and saves it permanently.
  */
 function postLocalComment(author, topic, rating, message, tags = []) {
@@ -2672,14 +2683,23 @@ function postLocalComment(author, topic, rating, message, tags = []) {
   state.localComments.unshift(newComment);
   saveLocalComments();
 
-  // Re-render
+  // Re-render comments stream
   const streamFilter = document.getElementById("stream-filter-select");
   const activeFilter = streamFilter ? streamFilter.value : "all";
   renderLocalComments(activeFilter);
   renderMainPageReviewsPreview();
   updateLocalCommentsCount();
 
-  showToastNotification("🎉 Your review has been posted successfully to the community board!");
+  // Smoothly scroll and highlight new comment
+  setTimeout(() => {
+    const newCard = document.getElementById(`comment-card-${newComment.id}`);
+    if (newCard) {
+      newCard.classList.add("newly-posted-card");
+      newCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, 50);
+
+  showToastNotification("🎉 Your review has been posted successfully and saved!");
 }
 
 /**
@@ -2691,6 +2711,24 @@ function setupCommunityCommentsEventListeners() {
   const btnDisqusTab = document.getElementById("btn-tab-community-disqus");
   const panelLocal = document.getElementById("community-local-panel");
   const wrapperDisqus = document.getElementById("discussions-tab-disqus-wrapper");
+  const btnSwitchToInstant = document.getElementById("btn-switch-to-instant-reviews");
+
+  const switchToLocalMode = () => {
+    if (btnLocalTab && btnDisqusTab && panelLocal && wrapperDisqus) {
+      btnLocalTab.classList.add("active");
+      btnLocalTab.setAttribute("aria-selected", "true");
+      btnDisqusTab.classList.remove("active");
+      btnDisqusTab.setAttribute("aria-selected", "false");
+      panelLocal.classList.remove("hidden");
+      wrapperDisqus.classList.add("hidden");
+      const authorField = document.getElementById("comment-author-name");
+      if (authorField) authorField.focus();
+    }
+  };
+
+  if (btnSwitchToInstant) {
+    btnSwitchToInstant.addEventListener("click", switchToLocalMode);
+  }
 
   if (btnLocalTab && btnDisqusTab && panelLocal && wrapperDisqus) {
     btnLocalTab.addEventListener("click", () => {
@@ -2709,6 +2747,8 @@ function setupCommunityCommentsEventListeners() {
       btnLocalTab.setAttribute("aria-selected", "false");
       panelLocal.classList.add("hidden");
       wrapperDisqus.classList.remove("hidden");
+
+      ensureDisqusContainer("discussions-tab-disqus-wrapper");
 
       // Load or ensure active Disqus thread
       loadDisqusThread(
@@ -2879,6 +2919,7 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
   const countBadgeEl = document.getElementById("disqus-thread-count-badge");
   const topicSelect = document.getElementById("disqus-topic-select");
   const langSelect = document.getElementById("disqus-language-select");
+  const directLinkEl = document.getElementById("btn-open-disqus-direct");
 
   if (!threadContainer) return;
 
@@ -2904,6 +2945,9 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
   }
   if (countBadgeEl) {
     countBadgeEl.setAttribute("data-disqus-identifier", identifier);
+  }
+  if (directLinkEl) {
+    directLinkEl.href = `https://disqus.com/home/discussion/dreamwithinreach/${encodeURIComponent(identifier)}/`;
   }
 
   const shortname = state.disqus.shortname;
@@ -2951,7 +2995,7 @@ function loadDisqusThread(identifier, title, url, language = "en", forceReload =
           threadContainer.innerHTML = `
             <div class="disqus-placeholder-card" style="padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; margin-top: 16px;">
               <p style="font-weight: 600; margin-bottom: 8px;">💬 Disqus Forum Ready</p>
-              <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Disqus community commenting is configured for <strong>${escapeHTML(title)}</strong>. You can also post instantly using the Instant Community Reviews tab above.</p>
+              <p style="font-size: 13px; color: #94a3b8; max-width: 500px; margin: 0 auto 12px;">Disqus community commenting is configured for <strong>${escapeHTML(title)}</strong>. You can post instantly using the Instant Community Reviews tab or open Disqus directly.</p>
             </div>
           `;
         }
@@ -3038,9 +3082,16 @@ function openDisqusForFlat(flatId) {
     composeTopic.value = flatId;
   }
 
-  // 3. Load the unit's Disqus thread
+  // 3. Load the unit's Disqus thread and focus comment input
   setTimeout(() => {
     loadDisqusThread(flatId, flatTitle, flatUrl, state.disqus.language);
+    const authorInput = document.getElementById("comment-author-name");
+    const bodyInput = document.getElementById("comment-body-text");
+    if (authorInput && !authorInput.value.trim()) {
+      authorInput.focus();
+    } else if (bodyInput) {
+      bodyInput.focus();
+    }
   }, 100);
 }
 
